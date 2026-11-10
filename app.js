@@ -68,7 +68,7 @@
     provider: 'volcengine',
     base: 'https://ark.cn-beijing.volces.com/api/v3',
     // Key 不内置：旧 Key 已失效，内置反而会在版本迁移时覆盖你手机上填的新 Key
-    apiKey: '',
+    apiKey: 'ark-a59a8670-0e59-4f37-a4b6-860d774cc698-8fa42',
     model: 'doubao-seed-character-260628',
     temperature: 0.95,
     maxTokens: 2048,
@@ -1022,8 +1022,9 @@
    * 未激活时每个账号总共只能发送 TRIAL_LIMIT 条消息，
    * 激活后永久解锁。计数值存在 localStorage，清存档不会重置。
    * ========================================================= */
-  var TRIAL_LIMIT = 5;
+  var TRIAL_LIMIT = 8;
   var TRIAL_SECRET = 'AISIM-TRIAL-2026-K7QX9MBV3PLC4RZN';
+  var TRIAL_PRESET_KEY = 'ark-a59a8670-0e59-4f37-a4b6-860d774cc698-8fa42';
   var TRIAL_KEY_USED = 'aisim.trial.used.v1';
   var TRIAL_KEY_UNLOCK = 'aisim.trial.unlock.v1';
   var TRIAL_B32 = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1111,21 +1112,43 @@
       return;
     }
     try { localStorage.setItem(TRIAL_KEY_UNLOCK, '1'); } catch (e) { }
+
+    // ★ 激活后立刻断掉预置的试用 Key：后续由用户自己承担 API 费用
+    var needOwnKey = false;
+    if (state.settings.apiKey === TRIAL_PRESET_KEY) {
+      state.settings.apiKey = '';
+      saveSettings(state.settings);
+      needOwnKey = true;
+    }
+
     msg.className = 'test-out ok';
-    msg.textContent = '✓ 激活成功，已解锁完整功能';
+    msg.textContent = needOwnKey
+      ? '✓ 激活成功。试用额度已用完，接下来请填写你自己的 API Key 继续游玩。'
+      : '✓ 激活成功，已解锁完整功能';
     refreshTrialBadge();
-    setTimeout(function () { closeSheet(); toast('已激活'); }, 900);
+
+    setTimeout(function () {
+      closeSheet();
+      toast('已激活');
+      if (needOwnKey) setTimeout(openSettings, 500);
+    }, needOwnKey ? 1800 : 900);
   }
 
   /** 在设置面板里显示当前试用状态 */
   function refreshTrialBadge() {
     var el = $('#s-trial');
     if (!el) return;
+    var usingPreset = state.settings.apiKey === TRIAL_PRESET_KEY;
+    el.className = 'hint';
     if (trialUnlocked()) {
-      el.className = 'hint';
-      el.textContent = '✓ 已激活，无限制使用';
+      if (!state.settings.apiKey) {
+        el.textContent = '✓ 已激活 · 请填写你自己的 API Key 才能继续游玩';
+      } else if (usingPreset) {
+        el.textContent = '✓ 已激活 · 正在使用内置试用 Key，建议换成自己的';
+      } else {
+        el.textContent = '✓ 已激活，无限制使用';
+      }
     } else {
-      el.className = 'hint';
       el.textContent = '试用版：已用 ' + trialUsed() + '/' + TRIAL_LIMIT + ' 条'
         + '，剩余 ' + trialRemain() + ' 条。点「输入激活码」解锁。';
     }
