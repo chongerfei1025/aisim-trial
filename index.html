@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>AI 角色模拟器</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content" />
+<meta name="theme-color" content="#0b0d12" />
+<meta name="color-scheme" content="dark" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="format-detection" content="telephone=no" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= 视图 1：角色列表 ================= -->
+  <section class="view active" id="view-list">
+    <header class="bar bar-list">
+      <div class="seg" id="seg-tabs">
+        <button class="seg-btn active" data-tab="persona" type="button">角色</button>
+        <button class="seg-btn" data-tab="world" type="button">世界</button>
+      </div>
+      <div class="bar-actions">
+        <button class="icon-btn" id="btn-import" aria-label="导入">⇩</button>
+        <button class="icon-btn" id="btn-new" aria-label="新建">＋</button>
+        <button class="icon-btn" id="btn-settings" aria-label="设置">⚙</button>
+      </div>
+    </header>
+    <div class="scroll" id="persona-list"></div>
+    <div class="list-foot" id="list-foot"></div>
+  </section>
+
+  <!-- ================= 视图 2：聊天 ================= -->
+  <section class="view" id="view-chat">
+    <header class="bar">
+      <button class="icon-btn" id="btn-back" aria-label="返回">‹</button>
+      <div class="chat-title">
+        <span class="avatar" id="chat-avatar">🙂</span>
+        <div class="ct-text">
+          <b id="chat-name">…</b>
+          <small id="chat-sub">…</small>
+        </div>
+      </div>
+      <button class="icon-btn" id="btn-chat-menu" aria-label="菜单">⋯</button>
+    </header>
+    <div class="scroll" id="messages"></div>
+    <div class="composer" id="composer">
+      <textarea id="input" rows="1" placeholder="说点什么…" enterkeyhint="send" autocomplete="off"></textarea>
+      <button class="fab" id="btn-send" aria-label="发送">↑</button>
+      <button class="fab stop hidden" id="btn-stop" aria-label="停止">■</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- ================= 遮罩 ================= -->
+<div class="sheet-mask" id="sheet-mask"></div>
+
+<!-- ================= 抽屉：设置 ================= -->
+<aside class="sheet" id="sheet-settings">
+  <div class="sheet-head">
+    <b>设置</b>
+    <button class="icon-btn" data-close aria-label="关闭">✕</button>
+  </div>
+  <div class="sheet-body">
+    <label class="field">
+      <span>服务商</span>
+      <select id="s-provider"></select>
+    </label>
+    <div class="hint provider-hint hidden" id="s-provider-hint"></div>
+    <label class="field">
+      <span>接口地址 Base URL</span>
+      <input id="s-base" type="url" inputmode="url" placeholder="https://api.deepseek.com/v1"
+             autocapitalize="off" autocorrect="off" spellcheck="false" />
+    </label>
+    <div class="endpoint-line" id="s-endpoint"></div>
+    <label class="field">
+      <span>API Key</span>
+      <div class="row">
+        <input id="s-key" type="password" placeholder="sk-..." autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <button class="mini" id="s-key-eye" type="button">显示</button>
+      </div>
+    </label>
+    <label class="field">
+      <span>模型</span>
+      <div class="row">
+        <input id="s-model" placeholder="deepseek-chat" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <button class="mini" id="s-models" type="button">拉取</button>
+      </div>
+    </label>
+    <div class="model-list" id="s-model-list"></div>
+    <div class="field-2">
+      <label class="field"><span>温度</span><input id="s-temp" type="number" step="0.05" min="0" max="2" inputmode="decimal" /></label>
+      <label class="field"><span>最大输出</span><input id="s-maxtok" type="number" min="64" step="64" inputmode="numeric" /></label>
+    </div>
+    <label class="field">
+      <span>你的称呼（{{user}}）</span>
+      <input id="s-username" placeholder="你" />
+    </label>
+    <label class="field">
+      <span>上下文条数上限</span>
+      <input id="s-ctx" type="number" min="4" max="200" inputmode="numeric" />
+    </label>
+    <label class="switch"><input type="checkbox" id="s-stream" /><span>流式输出（逐字）</span></label>
+    <label class="switch"><input type="checkbox" id="s-tts" /><span>自动朗读回复</span></label>
+    <div class="hint">Key 仅保存在本机浏览器存储（localStorage），不会上传到任何第三方服务器，请求直连你填写的接口地址。</div>
+    <div class="row-actions">
+      <button class="btn" id="s-test" type="button">测试连接</button>
+      <button class="btn primary" id="s-save" type="button">保存</button>
+    </div>
+    <div class="test-out" id="s-test-out"></div>
+    <div class="hint" id="s-trial">—</div>
+    <div class="hint tiny">本机数据：<span id="s-stats">—</span></div>
+    <div class="row-actions">
+      <button class="btn danger-ghost" id="s-wipe" type="button">清空全部数据</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ================= 抽屉：角色编辑 ================= -->
+<aside class="sheet" id="sheet-persona">
+  <div class="sheet-head">
+    <b id="pe-title">新建角色</b>
+    <button class="icon-btn" data-close aria-label="关闭">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="hint" style="margin:0 0 16px">改完点保存，<b>从下一条回复开始生效</b>；已有的对话不会被改写。</div>
+    <div class="field-2">
+      <label class="field"><span>头像 emoji</span><input id="p-avatar" maxlength="4" placeholder="🙂" /></label>
+      <label class="field"><span>名字</span><input id="p-name" placeholder="林夏" /></label>
+    </div>
+    <label class="field"><span>角色设定</span><textarea id="p-desc" rows="6" placeholder="年龄、身份、外貌、背景故事…"></textarea></label>
+    <label class="field"><span>性格 / 说话方式</span><textarea id="p-personality" rows="5" placeholder="温柔但嘴硬，说话爱用短句，喜欢打趣…"></textarea></label>
+    <label class="field"><span>场景</span><textarea id="p-scenario" rows="4" placeholder="深夜的便利店，外面在下雨…"></textarea></label>
+    <label class="field"><span>开场白（角色的第一句话）</span><textarea id="p-first" rows="5" placeholder="她抬眼看你，把热咖啡推到你面前：…"></textarea></label>
+    <label class="field"><span>对话示例（可选，一行一轮）</span><textarea id="p-example" rows="6" placeholder="{{user}}: 在干嘛&#10;{{char}}: 刚洗完澡，头发还在滴水…"></textarea></label>
+    <label class="field"><span>额外规则（可选）</span><textarea id="p-extra" rows="4" placeholder="回复不超过 150 字；多用动作描写。"></textarea></label>
+    <div class="row-actions">
+      <button class="btn danger-ghost" id="p-delete" type="button">删除</button>
+      <button class="btn primary" id="p-save" type="button">保存</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ================= 抽屉：世界编辑 ================= -->
+<aside class="sheet" id="sheet-world">
+  <div class="sheet-head">
+    <b id="we-title">新建世界</b>
+    <button class="icon-btn" data-close aria-label="关闭">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="hint" style="margin:0 0 16px">改完点保存，<b>从下一轮对话开始生效</b>；已经发生的剧情不会被改写。想从新设定重新开始，用聊天页 ⋯ →「清空存档，重新开局」。</div>
+    <div class="field-2">
+      <label class="field"><span>图标 emoji</span><input id="w-icon" maxlength="4" placeholder="🌍" /></label>
+      <label class="field"><span>世界名称</span><input id="w-name" placeholder="透视眼人生模拟器" /></label>
+    </div>
+    <label class="field"><span>场景正文长度（每轮强制，会写进最高优先级指令）</span><input id="w-length" placeholder="400~500 字" /></label>
+    <label class="field"><span>世界设定</span><textarea id="w-setting" rows="6" placeholder="时代背景、地点、社会运行逻辑、力量体系…"></textarea></label>
+    <label class="field"><span>玩家身份</span><textarea id="w-role" rows="5" placeholder="19 岁男生，大二，普通专业，普通长相，普通家庭。三天前突然觉醒了某个能力…"></textarea></label>
+    <label class="field"><span>特殊系统（可选）</span><textarea id="w-systems" rows="5" placeholder="透视眼：可看穿衣物与薄物内部，超过 15 米逐渐模糊，持续使用会轻微头痛。"></textarea></label>
+    <label class="field"><span>开局场景</span><textarea id="w-opening" rows="5" placeholder="下午两点，专业课教室。你坐在倒数第二排靠窗的位置…"></textarea></label>
+    <label class="field"><span>铁律 / 限制（可选）</span><textarea id="w-rules" rows="5" placeholder="NPC 有独立动机，不会无缘无故喜欢你；能力有代价；不出现超出设定的东西。"></textarea></label>
+    <label class="field"><span>GM 风格（可选）</span><textarea id="w-style" rows="3" placeholder="场景描写 200-400 字，第二人称，多写感官细节，节奏紧凑。"></textarea></label>
+    <div class="field">
+      <span>引用角色卡 —— 勾选后这些角色会作为 NPC 进入世界，严格遵守其人设</span>
+      <div class="linked-list" id="w-linked"></div>
+    </div>
+    <label class="switch"><input type="checkbox" id="w-sync" /><span>同步角色聊天记录<br/><small style="color:var(--dim2);font-size:11.5px">开启后 GM 能读到你和她们的线上聊天，剧情会主动呼应</small></span></label>
+    <div class="row-actions">
+      <button class="btn danger-ghost" id="w-delete" type="button">删除</button>
+      <button class="btn primary" id="w-save" type="button">保存</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ================= 抽屉：聊天菜单 ================= -->
+<aside class="sheet sheet-sm" id="sheet-menu">
+  <div class="sheet-head">
+    <b>对话操作</b>
+    <button class="icon-btn" data-close aria-label="关闭">✕</button>
+  </div>
+  <div class="sheet-body">
+    <button class="menu-item" id="m-edit">编辑角色卡</button>
+    <button class="menu-item" id="m-timeline">📜 时间线（线上聊天 + 世界剧情）</button>
+    <button class="menu-item" id="m-regen">重新生成上一条</button>
+    <button class="menu-item" id="m-speak">朗读最后一条回复</button>
+    <button class="menu-item" id="m-export">导出这段对话 (JSON)</button>
+    <button class="menu-item" id="m-reset">清空对话重新开始</button>
+    <button class="menu-item danger" id="m-delete">删除这个角色</button>
+  </div>
+</aside>
+
+<!-- ================= 抽屉：时间线 ================= -->
+<aside class="sheet" id="sheet-timeline">
+  <div class="sheet-head">
+    <b id="tl-title">时间线</b>
+    <button class="icon-btn" data-close aria-label="关闭">✕</button>
+  </div>
+  <div class="sheet-body" id="timeline-body"></div>
+</aside>
+
+<!-- ================= 抽屉：编辑玩家消息 ================= -->
+<aside class="sheet sheet-sm" id="sheet-edit-msg">
+  <div class="sheet-head">
+    <b>编辑这条消息</b>
+    <button class="icon-btn" data-close aria-label="关闭">✕</button>
+  </div>
+  <div class="sheet-body">
+    <label class="field">
+      <span>你的行动 / 台词</span>
+      <textarea id="edit-msg-text" rows="6" placeholder="修改后可以只保存，也可以让 GM 按新内容重新续写…"></textarea>
+    </label>
+    <div class="row-actions">
+      <button class="btn" id="edit-msg-only" type="button">只保存</button>
+      <button class="btn primary" id="edit-msg-save" type="button">保存并重新生成</button>
+    </div>
+    <div class="hint">「保存并重新生成」会删掉这条之后的所有 GM 回复，按新的行动重新续写；「只保存」仅修正文字，保留后续剧情。</div>
+  </div>
+</aside>
+
+<!-- ================= 抽屉：激活码 ================= -->
+<aside class="sheet sheet-sm" id="sheet-activate">
+  <div class="sheet-head">
+    <b>输入激活码</b>
+    <button class="icon-btn" data-close aria-label="关闭">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="hint" style="margin:0 0 14px" id="act-status">—</div>
+    <label class="field">
+      <span>激活码</span>
+      <textarea id="act-code" rows="2" placeholder="XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false"></textarea>
+    </label>
+    <div class="row-actions">
+      <button class="btn primary" id="act-submit" type="button">激活</button>
+    </div>
+    <div class="test-out" id="act-msg"></div>
+    <div class="hint">激活码区分大小写已自动处理；输错请检查字母是否被看混（已自动排除 0/O、1/I）。</div>
+  </div>
+</aside>
+
+<input type="file" id="file-import" accept=".json,application/json" hidden />
+<script src="api.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

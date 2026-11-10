@@ -1,0 +1,38 @@
+{
+  "name": "AI 角色模拟器",
+  "short_name": "角色模拟",
+  "description": "本地存储角色卡、直连大模型 API 的沉浸式角色扮演聊天应用",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "id": "aisim-roleplay",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "categories": ["entertainment", "social", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/chat.png",
+      "sizes": "500x820",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "沉浸式角色对话：流式逐字输出、动作描写、可朗读"
+    },
+    {
+      "src": "screenshots/list.png",
+      "sizes": "500x820",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "角色卡列表：本地保存，随时切换"
+    }
+  ]
+}
