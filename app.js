@@ -2432,20 +2432,20 @@
    * ========================================================= */
   /* ---------------- 界面配色 ---------------- */
   var THEME_KEY = 'aisim.theme.v1';
-  var THEMES = ['default', 'blue', 'gold', 'orange'];
+  var THEMES = ['gold', 'paper', 'cyber'];
 
   function currentTheme() {
     try {
       var v = localStorage.getItem(THEME_KEY);
-      return THEMES.indexOf(v) >= 0 ? v : 'default';
-    } catch (e) { return 'default'; }
+      return THEMES.indexOf(v) >= 0 ? v : 'gold';
+    } catch (e) { return 'gold'; }
   }
 
   function applyTheme(name) {
-    var t = THEMES.indexOf(name) >= 0 ? name : 'default';
+    var t = THEMES.indexOf(name) >= 0 ? name : 'gold';
     var b = document.body;
-    b.classList.remove('theme-blue', 'theme-gold', 'theme-orange');
-    if (t !== 'default') b.classList.add('theme-' + t);
+    b.classList.remove('t-gold', 't-paper', 't-cyber');
+    b.classList.add('t-' + t);
     try { localStorage.setItem(THEME_KEY, t); } catch (e) { }
     var grid = $('#theme-grid');
     if (grid) {
@@ -2455,7 +2455,7 @@
     }
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
-      var colors = { default: '#0b0d12', blue: '#f4f7fc', gold: '#0a0806', orange: '#2b2e33' };
+      var colors = { gold: '#0b0905', paper: '#f7f4ee', cyber: '#06090f' };
       meta.setAttribute('content', colors[t] || '#0b0d12');
     }
   }

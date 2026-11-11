@@ -18,56 +18,68 @@
   --safe-t: env(safe-area-inset-top, 0px);
 }
 
-/* ============ 三套配色主题 ============ */
-/* A · 白底蓝框 */
-body.theme-blue {
-  --bg: #f4f7fc;
-  --bg2: #ffffff;
-  --card: #ffffff;
-  --card2: #eef4fc;
-  --line: #cfe0f5;
-  --text: #182338;
-  --dim: #5b6c88;
-  --dim2: #93a4bf;
-  --accent: #1e6fff;
-  --accent2: #3d8bff;
-  --ok: #12a05a;
-  --err: #d93a3a;
-  --sheet: #ffffff;
-}
+/* ============ 三套视觉风格 ============ */
+/* ① 深空暗金（默认）*/
+body.t-gold {
+  --bar-bg: rgba(11, 9, 5, .9);
+  --h1-a: #f3e8d2;
+  --h1-b: #e0a92e;
 
-/* B · 黑底金框 */
-body.theme-gold {
-  --bg: #0a0806;
-  --bg2: #12100b;
-  --card: #191510;
-  --card2: #221d14;
-  --line: #3a3020;
-  --text: #f3e8d2;
+  --bg: #0b0905;
+  --bg2: #12100a;
+  --card: #171309;
+  --card2: #1e1810;
+  --line: rgba(224,169,46,.18);
+  --text: #f0e4cd;
   --dim: #b3996d;
   --dim2: #7d6a49;
   --accent: #e0a92e;
   --accent2: #ffcf5c;
   --ok: #43b581;
   --err: #e05a4a;
-  --sheet: #131009;
+  --sheet: #100d07;
 }
 
-/* C · 灰底橙框 */
-body.theme-orange {
-  --bg: #2b2e33;
-  --bg2: #34383e;
-  --card: #3b4046;
-  --card2: #464c53;
-  --line: #565d66;
-  --text: #f1f3f6;
-  --dim: #aab2bc;
-  --dim2: #7f8892;
-  --accent: #ee8621;
-  --accent2: #ffa84d;
-  --ok: #3fbf7f;
-  --err: #f0685a;
-  --sheet: #31353a;
+/* ② 书页极简 */
+body.t-paper {
+  --bar-bg: rgba(247, 244, 238, .94);
+  --h1-a: #2a2a2a;
+  --h1-b: #8b6f47;
+
+  --bg: #f7f4ee;
+  --bg2: #fffdf9;
+  --card: #fffdf9;
+  --card2: #f0ece2;
+  --line: #e6e0d4;
+  --text: #2a2a2a;
+  --dim: #7a7368;
+  --dim2: #a89e8e;
+  --accent: #8b6f47;
+  --accent2: #b08a57;
+  --ok: #3f8a5e;
+  --err: #c05a4a;
+  --sheet: #fffdf9;
+}
+
+/* ③ 霓虹赛博 */
+body.t-cyber {
+  --bar-bg: rgba(6, 9, 15, .9);
+  --h1-a: #d6e4ff;
+  --h1-b: #00e5ff;
+
+  --bg: #06090f;
+  --bg2: #0b1220;
+  --card: #101a2e;
+  --card2: #16233a;
+  --line: rgba(0,229,255,.16);
+  --text: #d6e4ff;
+  --dim: #63809f;
+  --dim2: #3f5a7d;
+  --accent: #00e5ff;
+  --accent2: #4d9fff;
+  --ok: #2ee6a0;
+  --err: #ff5c7a;
+  --sheet: #0a111e;
 }
 
 /* 世界剧情：不显示头像，正文直接铺开（更干净） */
@@ -134,10 +146,9 @@ body.theme-orange {
   flex: 0 0 26px;
   border: 2px solid;
 }
-.sw-default { background: #0b0d12; border-color: #6366f1; }
-.sw-blue    { background: #ffffff; border-color: #1e6fff; }
-.sw-gold    { background: #0a0806; border-color: #e0a92e; }
-.sw-orange  { background: #2b2e33; border-color: #ee8621; }
+.sw-gold  { background: linear-gradient(140deg,#171309,#0b0905); border-color: #e0a92e; }
+.sw-paper { background: #f7f4ee; border-color: #8b6f47; }
+.sw-cyber { background: linear-gradient(140deg,#101a2e,#06090f); border-color: #00e5ff; }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -178,7 +189,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 10px;
-  background: rgba(11, 13, 18, .88);
+  background: var(--bar-bg, rgba(11, 13, 18, .88));
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--line);
@@ -190,7 +201,7 @@ body {
   flex: 1;
   font-weight: 700;
   letter-spacing: .5px;
-  background: linear-gradient(120deg, #fff, #b9a7ff);
+  background: linear-gradient(120deg, var(--h1-a, #fff), var(--h1-b, #b9a7ff));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -248,7 +259,7 @@ body {
   display: grid; place-items: center;
   font-size: 19px;
   border-radius: 50%;
-  background: linear-gradient(145deg, #232a3d, #171b25);
+  background: var(--card2);
   border: 1px solid var(--line);
 }
 .ct-text { min-width: 0; display: flex; flex-direction: column; }
@@ -286,8 +297,8 @@ body {
   display: grid; place-items: center;
   font-size: 25px;
   border-radius: 14px;
-  background: linear-gradient(145deg, #2a3249, #1a1e2a);
-  border: 1px solid #2e3648;
+  background: var(--card2);
+  border: 1px solid var(--line);
 }
 .pcard .pinfo { flex: 1; min-width: 0; }
 .pcard .pname {
@@ -404,8 +415,8 @@ body {
   place-items: center;
   font-size: 20px;
   border-radius: 9px;
-  background: linear-gradient(145deg, #2a3249, #1a1e2a);
-  border: 1px solid #2e3648;
+  background: var(--card2);
+  border: 1px solid var(--line);
   user-select: none;
 }
 .mava.me {
@@ -871,4 +882,206 @@ body {
   line-height: 1.8;
   color: var(--dim2);
   letter-spacing: .2px;
+}
+
+
+/* =====================================================
+   主题专属外观
+   ===================================================== */
+
+/* ---------- ① 深空暗金 ---------- */
+body.t-gold .pcard {
+  position: relative;
+  border: 1px solid rgba(224,169,46,.22);
+  border-radius: 12px;
+  background: linear-gradient(150deg, #1c1610, #14100a);
+}
+body.t-gold .pcard::after {
+  content: '';
+  position: absolute; right: 12px; top: 12px; width: 14px; height: 14px;
+  border-top: 1.5px solid rgba(224,169,46,.42);
+  border-right: 1.5px solid rgba(224,169,46,.42);
+  pointer-events: none;
+}
+body.t-gold .msg.rich .bubble {
+  background: linear-gradient(155deg, #171208, #100c07);
+  border: 1px solid rgba(224,169,46,.16);
+  border-radius: 12px;
+}
+body.t-gold .world-options .opt-btn:first-child {
+  background: rgba(224,169,46,.12);
+  border-color: rgba(224,169,46,.45);
+  color: #f0dfb8;
+}
+body.t-gold .seg-btn.active {
+  background: linear-gradient(135deg, #e0a92e, #b8871d);
+  color: #1a1206;
+  box-shadow: 0 2px 14px rgba(224,169,46,.35);
+}
+body.t-gold .fab {
+  background: linear-gradient(135deg, #e0a92e, #b8871d);
+  color: #1a1206;
+  box-shadow: 0 4px 16px rgba(224,169,46,.3);
+}
+
+/* ---------- ② 书页极简 ---------- */
+body.t-paper,
+body.t-paper .bubble,
+body.t-paper .msg.rich .bubble {
+  font-family: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+}
+body.t-paper .msg.rich .bubble {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+body.t-paper .msg.rich .bubble b {
+  color: #5a4a35;
+  letter-spacing: .5px;
+}
+body.t-paper .pcard {
+  border: none;
+  border-bottom: 1px solid #e8e3d9;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+body.t-paper .pcard:last-child { border-bottom: none; }
+body.t-paper .seg-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: #b0a898;
+}
+body.t-paper .seg-btn.active {
+  background: transparent;
+  color: #2a2a2a;
+  font-weight: 700;
+  border-bottom-color: #2a2a2a;
+}
+body.t-paper .world-options .opt-btn {
+  background: #fffdf9;
+  border: 1px solid #e3ddd1;
+  border-radius: 4px;
+  color: #555;
+}
+body.t-paper .world-options .opt-btn:first-child {
+  border-color: #2a2a2a;
+  color: #222;
+  font-weight: 600;
+}
+body.t-paper .fab {
+  background: #2a2a2a;
+  color: #fff;
+  border-radius: 50%;
+}
+body.t-paper .chat-head {
+  border-bottom: 1px solid #eee9df;
+}
+
+/* ---------- ③ 霓虹赛博 ---------- */
+body.t-cyber .pcard {
+  position: relative;
+  border: 1px solid rgba(0,229,255,.18);
+  border-radius: 10px;
+  background: linear-gradient(140deg, rgba(20,32,56,.9), rgba(12,18,34,.9));
+  overflow: hidden;
+  box-shadow: 0 0 24px rgba(0,120,255,.08), inset 0 1px 0 rgba(255,255,255,.04);
+}
+body.t-cyber .pcard::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: linear-gradient(to bottom, #00e5ff, #a855f7);
+  pointer-events: none;
+}
+body.t-cyber .pcard::after {
+  content: '';
+  position: absolute; right: -20px; top: -20px; width: 70px; height: 70px;
+  background: radial-gradient(circle, rgba(0,229,255,.15), transparent 70%);
+  pointer-events: none;
+}
+body.t-cyber .msg.rich .bubble {
+  background: linear-gradient(150deg, rgba(18,28,50,.85), rgba(10,16,30,.85));
+  border: 1px solid rgba(0,229,255,.14);
+  border-radius: 10px;
+  box-shadow: 0 0 30px rgba(0,120,255,.06);
+}
+body.t-cyber .world-options .opt-btn {
+  background: rgba(0,140,255,.05);
+  border: 1px solid rgba(0,229,255,.12);
+  border-radius: 7px;
+  color: #7d9dc4;
+}
+body.t-cyber .world-options .opt-btn:first-child {
+  color: #b8f0ff;
+  border-color: rgba(0,229,255,.5);
+  background: rgba(0,229,255,.09);
+  box-shadow: 0 0 16px rgba(0,229,255,.14);
+}
+body.t-cyber .seg-btn.active {
+  background: linear-gradient(135deg, #00e5ff, #4d9fff);
+  color: #061018;
+  box-shadow: 0 0 18px rgba(0,229,255,.5);
+}
+body.t-cyber .fab {
+  background: linear-gradient(135deg, #00e5ff, #4d9fff);
+  color: #061018;
+  box-shadow: 0 0 20px rgba(0,229,255,.45);
+}
+
+/* paper: tab 强制样式 */
+body.t-paper .seg { background: transparent; border-color: #e6e0d4; }
+body.t-paper .seg-btn { color: #a89e8e; }
+body.t-paper .seg-btn.active {
+  background: #2a2a2a;
+  color: #fffdf9;
+  font-weight: 700;
+}
+
+
+/* 主题细节补丁 */
+
+/* gold：所有选项都用金色系，不再残留深蓝 */
+body.t-gold .world-options .opt-btn {
+  background: rgba(224,169,46,.05);
+  border: 1px solid rgba(224,169,46,.18);
+  color: #c9b78f;
+}
+body.t-gold .msg-tools button {
+  background: rgba(224,169,46,.07);
+  border-color: rgba(224,169,46,.16);
+  color: #8a7550;
+}
+
+/* paper：列表项、工具按钮也走衬线/浅色 */
+body.t-paper .msg.rich .bubble li,
+body.t-paper .msg.rich .bubble ul,
+body.t-paper .msg.rich .bubble b,
+body.t-paper .msg-tools button,
+body.t-paper .world-options .opt-btn {
+  font-family: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+}
+body.t-paper .msg-tools button {
+  background: transparent;
+  border: 1px solid #ddd6c8;
+  color: #8a8172;
+}
+body.t-paper .bubble,
+body.t-paper .msg.user .bubble {
+  background: #efece4;
+  color: #2a2a2a;
+  border-radius: 4px;
+}
+body.t-paper .msg.ai .bubble:not(.rich) {
+  background: #fffdf9;
+  border: 1px solid #e6e0d4;
+}
+
+/* cyber：工具按钮也用青色调 */
+body.t-cyber .msg-tools button {
+  background: rgba(0,140,255,.06);
+  border-color: rgba(0,229,255,.14);
+  color: #63809f;
 }
