@@ -969,6 +969,8 @@
     var tgLine = [];
     if (tgp.gender) tgLine.push('主角性别：' + tgp.gender);
     if (tgp.genre) tgLine.push('题材：' + tgp.genre);
+    if (tgp.rel) tgLine.push('关系结构：' + tgp.rel + '（' + (tgp.rel === '无CP' ? '不安排感情线' : '按此结构安排人物关系') + '）');
+    if (tgp.heat) tgLine.push('情感尺度：' + tgp.heat + '（描写亲密的程度以此为上限，不要越界也不要刻意回避）');
     if (tgp.tone) tgLine.push('基调：' + tgp.tone);
     if (tgLine.length) {
       s += '# 题材标签\n' + tgLine.join('\n') + '\n';
@@ -1697,6 +1699,8 @@
     var tg = w.tags || {};
     setTagValue('#tag-gender', tg.gender || '');
     setTagValue('#tag-genre', tg.genre || '');
+    setTagValue('#tag-rel', tg.rel || '');
+    setTagValue('#tag-heat', tg.heat || '');
     setTagValue('#tag-tone', tg.tone || '');
     $('#w-delete').classList.toggle('hidden', !world);
 
@@ -1759,6 +1763,8 @@
     w.tags = {
       gender: getTagValue('#tag-gender'),
       genre: getTagValue('#tag-genre'),
+      rel: getTagValue('#tag-rel'),
+      heat: getTagValue('#tag-heat'),
       tone: getTagValue('#tag-tone')
     };
     w.updatedAt = now();
@@ -2147,7 +2153,7 @@
     }
 
     // 世界标签：点一下切换
-    ['#tag-gender', '#tag-genre', '#tag-tone'].forEach(function (sel) {
+    ['#tag-gender', '#tag-genre', '#tag-rel', '#tag-heat', '#tag-tone'].forEach(function (sel) {
       var box = $(sel);
       if (!box) return;
       box.addEventListener('click', function (ev) {
