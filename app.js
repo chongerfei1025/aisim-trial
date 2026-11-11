@@ -66,15 +66,15 @@
 
   /* 内置试用 Key：分片存放，避免在源码里成为一整串可直接复制的明文 */
   var PRESET_KEY = [
-    'ark-a59a8670', '-0e59-4f37', '-a4b6-860d',
-    '774cc698', '-8fa42'
+    'ark-0851ee7c', '-7632-40c5', '-aafc-7197',
+    '66946e97', '-5fbf7'
   ].join('');
 
   var DEFAULT_SETTINGS = {
     provider: 'volcengine',
     base: 'https://ark.cn-beijing.volces.com/api/v3',
     apiKey: PRESET_KEY,
-    model: 'doubao-seed-character-260628',
+    model: 'deepseek-v4-1-flash-261017',
     temperature: 0.95,
     maxTokens: 2048,
     userName: '你',
