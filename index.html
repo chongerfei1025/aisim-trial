@@ -114,6 +114,25 @@
       <button class="btn primary" id="s-save" type="button">保存</button>
     </div>
     <div class="test-out" id="s-test-out"></div>
+
+    <div class="field">
+      <span>界面配色</span>
+      <div class="themegrid" id="theme-grid">
+        <button type="button" class="themebtn" data-t="default">
+          <i class="sw sw-default"></i><em>默认深色</em>
+        </button>
+        <button type="button" class="themebtn" data-t="blue">
+          <i class="sw sw-blue"></i><em>白底蓝框</em>
+        </button>
+        <button type="button" class="themebtn" data-t="gold">
+          <i class="sw sw-gold"></i><em>黑底金框</em>
+        </button>
+        <button type="button" class="themebtn" data-t="orange">
+          <i class="sw sw-orange"></i><em>灰底橙框</em>
+        </button>
+      </div>
+    </div>
+
     <div class="hint" id="s-trial">—</div>
     <div class="hint tiny">本机数据：<span id="s-stats">—</span></div>
     <div class="row-actions">
@@ -160,6 +179,41 @@
       <label class="field"><span>世界名称</span><input id="w-name" placeholder="透视眼人生模拟器" /></label>
     </div>
     <label class="field"><span>场景正文长度（每轮强制，会写进最高优先级指令）</span><input id="w-length" placeholder="400~500 字" /></label>
+
+    <!-- 标签选择 -->
+    <div class="field">
+      <span>主角性别</span>
+      <div class="tagrow" id="tag-gender">
+        <button type="button" class="tag" data-v="男">男</button>
+        <button type="button" class="tag" data-v="女">女</button>
+        <button type="button" class="tag" data-v="双主角">双主角</button>
+        <button type="button" class="tag" data-v="不限定">不限定</button>
+      </div>
+    </div>
+    <div class="field">
+      <span>题材</span>
+      <div class="tagrow" id="tag-genre">
+        <button type="button" class="tag" data-v="修仙">修仙</button>
+        <button type="button" class="tag" data-v="都市">都市</button>
+        <button type="button" class="tag" data-v="悬疑">悬疑</button>
+        <button type="button" class="tag" data-v="末世">末世</button>
+        <button type="button" class="tag" data-v="武侠">武侠</button>
+        <button type="button" class="tag" data-v="校园">校园</button>
+        <button type="button" class="tag" data-v="奇幻">奇幻</button>
+        <button type="button" class="tag" data-v="历史">历史</button>
+      </div>
+    </div>
+    <div class="field">
+      <span>基调</span>
+      <div class="tagrow" id="tag-tone">
+        <button type="button" class="tag" data-v="轻松">轻松</button>
+        <button type="button" class="tag" data-v="严肃">严肃</button>
+        <button type="button" class="tag" data-v="黑暗">黑暗</button>
+        <button type="button" class="tag" data-v="治愈">治愈</button>
+        <button type="button" class="tag" data-v="热血">热血</button>
+      </div>
+    </div>
+
     <label class="field"><span>世界设定</span><textarea id="w-setting" rows="6" placeholder="时代背景、地点、社会运行逻辑、力量体系…"></textarea></label>
     <label class="field"><span>玩家身份</span><textarea id="w-role" rows="5" placeholder="19 岁男生，大二，普通专业，普通长相，普通家庭。三天前突然觉醒了某个能力…"></textarea></label>
     <label class="field"><span>特殊系统（可选）</span><textarea id="w-systems" rows="5" placeholder="透视眼：可看穿衣物与薄物内部，超过 15 米逐渐模糊，持续使用会轻微头痛。"></textarea></label>

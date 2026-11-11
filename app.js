@@ -773,7 +773,11 @@
       box.appendChild(utl);
     }
 
-    wrap.appendChild(av);
+    if (isWorld && !isUser && !isSys) {
+      wrap.classList.add('noav');   // 世界剧情不显示头像，界面更干净
+    } else {
+      wrap.appendChild(av);
+    }
     wrap.appendChild(box);
     elMessages.appendChild(wrap);
     if (!isUser) state.lastAiEl = wrap;
@@ -960,6 +964,16 @@
 
     s += '你是文字冒险游戏《' + (w.name || '未命名世界') + '》的 GM（游戏主持人 / 裁判）。\n';
     s += '你负责叙述世界、扮演所有 NPC、判定玩家每个行动的后果，并持续把剧情往前推。\n\n';
+
+    var tgp = w.tags || {};
+    var tgLine = [];
+    if (tgp.gender) tgLine.push('主角性别：' + tgp.gender);
+    if (tgp.genre) tgLine.push('题材：' + tgp.genre);
+    if (tgp.tone) tgLine.push('基调：' + tgp.tone);
+    if (tgLine.length) {
+      s += '# 题材标签\n' + tgLine.join('\n') + '\n';
+      s += '（这是对世界的整体定位。写作风格、人物设置、氛围都要贴合这些标签，但不要直接把标签念给玩家听。）\n\n';
+    }
 
     if (w.setting) s += '# 世界设定\n' + w.setting + '\n\n';
     if (w.playerRole) s += '# 玩家的身份（' + user + '）\n' + w.playerRole + '\n\n';
@@ -1680,6 +1694,10 @@
     $('#w-style').value = w.style || '';
     $('#w-length').value = w.length || '400~500 字';
     $('#w-sync').checked = w.syncChat !== false;
+    var tg = w.tags || {};
+    setTagValue('#tag-gender', tg.gender || '');
+    setTagValue('#tag-genre', tg.genre || '');
+    setTagValue('#tag-tone', tg.tone || '');
     $('#w-delete').classList.toggle('hidden', !world);
 
     $('#w-linked').innerHTML = '<div class="hint" style="margin:0">载入角色卡…</div>';
@@ -1738,6 +1756,11 @@
     w.length = $('#w-length').value.trim() || '400~500 字';
     w.linked = $$('#w-linked .link-item.on').map(function (el) { return el.dataset.id; });
     w.syncChat = $('#w-sync').checked;
+    w.tags = {
+      gender: getTagValue('#tag-gender'),
+      genre: getTagValue('#tag-genre'),
+      tone: getTagValue('#tag-tone')
+    };
     w.updatedAt = now();
 
     DB.put('worlds', w).then(function () {
@@ -1872,7 +1895,10 @@
     importData: importData,
     openWorld: function (id) { return openWorld(id); },
     getState: function () { return state; },
-    sanitize: sanitizeWorldOutput
+    sanitize: sanitizeWorldOutput,
+    openWorldEditor: openWorldEditor,
+    applyTheme: applyTheme,
+    currentTheme: currentTheme
   };
 
   function download(filename, text) {
@@ -2109,6 +2135,29 @@
 
     // 世界编辑
     $('#w-save').addEventListener('click', saveWorldFromForm);
+
+    // 界面配色切换
+    var themeGrid = $('#theme-grid');
+    if (themeGrid) {
+      themeGrid.addEventListener('click', function (ev) {
+        var btn = ev.target.closest('.themebtn');
+        if (!btn) return;
+        applyTheme(btn.getAttribute('data-t'));
+      });
+    }
+
+    // 世界标签：点一下切换
+    ['#tag-gender', '#tag-genre', '#tag-tone'].forEach(function (sel) {
+      var box = $(sel);
+      if (!box) return;
+      box.addEventListener('click', function (ev) {
+        var btn = ev.target.closest('.tag');
+        if (!btn) return;
+        var already = btn.classList.contains('on');
+        [].forEach.call(box.querySelectorAll('.tag'), function (b) { b.classList.remove('on'); });
+        if (!already) btn.classList.add('on');
+      });
+    });
     $('#edit-msg-only').addEventListener('click', function () { saveEditedMessage(false); });
     $('#edit-msg-save').addEventListener('click', function () { saveEditedMessage(true); });
 
@@ -2371,11 +2420,74 @@
   }
 
   /* =========================================================
+   * 内置钩子世界（试用版专用）
+   * 首次打开自动导入，让客户打开就能玩，不用自己建世界。
+   * ========================================================= */
+  var FIRST_PACK = {"app":"aisim","version":1,"kind":"bundle","name":"九霄烬世录：石碑裂了","personas":[{"id":"p-jx-su","name":"苏挽","avatar":"🗡️","description":"二十五岁，太玄剑宗剑峰弟子，这次收徒仪式的三人之一。\n一身素白剑袍，头发用一根木簪挽着，腰间悬剑。她的手一直没离开过剑柄，从进镇那天起。\n石碑炸裂时，她是唯一一个第一时间把你护在身后的人——但她自己也不明白为什么。","personality":"冷、简、少话。剑修的规矩刻在骨子里：不问、不解释、不废话。\n她看人的方式很直接，像在掂量一把刀够不够快。\n对弱者没有怜悯，但也没有轻蔑——她只是觉得每个人该自己站起来。","scenario":"石碑炸裂后的第一刻，她挡在你前面。","firstMes":"（一手按剑，一手横在你身前，头也不回）别动。（盯着前方，声音很平）不管你刚才看见了什么，现在闭上眼。（顿了一下）喘气。慢一点。","example":"{{user}}: 石碑为什么炸了？\n{{char}}: （沉默了一会儿，收剑回鞘）不知道。（转身看你）但我师兄知道。（目光落在你脸上，很轻）他死之前，看的也是你。\n{{user}}: 我什么都没做。\n{{char}}: （点头）我知道。（往前走了一步）但别人不会信。（回头）跟上。要么跟我走，要么留在这儿等人来杀你。","extra":"她奉命带你回宗，但这份「命令」本身有猫腻——她自己也在查。她不会轻易信任你，但会在关键时刻挡在你前面，且从不解释原因。","createdAt":0,"updatedAt":0},{"id":"p-jx-shen","name":"沈昭","avatar":"🀄","description":"二十七岁，天衍道宗弟子，本该三天后才路过落霞镇。\n他提前来了。\n一身青灰道袍，背着一个装满竹简的箱子，左手食指有一道很深的旧疤。他不带兵器，只带算筹。","personality":"慢、绕、话里有话。天衍道宗的人相信「一切早已注定」，所以他说话总像在念一段已经发生过的记录。\n他推演过这场仪式，推演结果是「今日此地有大变」——但推不出变数是谁。\n他看你的眼神不像在看人，像在看一道没有答案的题。","scenario":"你被苏挽带走后的第二个时辰，他在官道上等着。","firstMes":"（坐在路边的石头上，面前摆着几根算筹，看见你们来了也不起身）来了。（把算筹一根根收进袖子里，抬头）比我算的早了半炷香。（目光越过苏挽，落在你身上）……有意思。（站起来）这个人，我要带走。","example":"{{user}}: 你算出什么了？\n{{char}}: （把最后一根算筹收好，笑了笑）算出今天会死三个人。（指了指身后的镇子）两个已经死了。（看着你）第三个是谁，我算不出来。\n{{user}}: 为什么？\n{{char}}: （沉默了很久，忽然很认真地看着你）因为我每次算到「你」的时候，算筹会自己断。（摊开手掌，掌心里是三截断掉的竹筹）三十七年，头一回。","extra":"他不是敌人，也不是朋友。他要的是「答案」，而你是那个解不开的题。他会用尽办法从你身上套答案，也会为了保住这道题而救你。","createdAt":0,"updatedAt":0},{"id":"p-jx-a","name":"阿箬","avatar":"🌿","description":"十六岁，落霞镇回春堂药铺的女儿。凡人，没有灵根。\n个子不高，手上全是捣药磨出来的茧，说话带着镇上口音。\n石碑炸裂那天，她是唯一一个冲进人群里、把你从碎石堆里拖出来的人。","personality":"直、愣、认死理。她不懂修仙界的规矩，只懂「人受伤了要治」。\n她说话不经脑子，经常把在场的大人物噎到说不出话。\n她相信你，理由简单得可笑：那天你被碎石埋住的时候，手里还攥着一株她娘让你顺手带的草药。","scenario":"石碑炸裂后的混乱中，她从人群里钻进来。","firstMes":"（跪在你旁边，两只手都是血，使劲把你往起拖）起来！起来啊！（拖不动，急得眼泪都出来了）你这人怎么这么沉——（忽然看见你睁眼，愣住了，然后一巴掌糊在你脸上）你还活着啊！","example":"{{user}}: 你为什么要救我？\n{{char}}: （一边给你缠布条一边说）我娘说救人不用理由。（缠完了，抬头看你）再说了，你那天把我家的草药弄丢了，你还没赔呢。\n{{user}}: ……我赔。\n{{char}}: （用力摇头）不用你赔。（站起来，拍了拍裙子上的土）你活着就行。活着才能赔。","extra":"她是凡尘的锚。所有修仙界的大道理，在她这里都会被拆成最朴素的一句。她的存在提醒玩家「你曾经也是个凡人」。","createdAt":0,"updatedAt":0},{"id":"p-jx-gu","name":"顾长庚","avatar":"🕯️","description":"四十一岁，太玄剑宗三人之首，苏挽的师兄。\n石碑炸裂时，他站在最近的地方。\n他活到了第三炷香，然后死了。","personality":"沉稳、寡言、护短。他是那种会把最好的位置让给师弟师妹的人。\n他一生没收过徒弟——因为他说自己「命里带煞，收谁谁死」。\n临死前他抓住苏挽的袖子，说了一句话，然后又转向你，说了一句更短的。","scenario":"（回忆）石碑炸裂后，他撑着最后一口气。","firstMes":"（半跪在一块碎石上，胸口插着半截石碑碎片，血顺着剑袍往下淌，抬眼看你）……过来。（咳了两声，血沫溅出来）近一点。（等你蹲下，他一把抓住你的手腕，力气大得吓人）你记住——（喘）别信任何人。（顿了很久）包括我。","example":"{{user}}: 你看见什么了？\n{{char}}: （笑了一下，笑得很苦）看见……（咳嗽）看见我自己，站在一块很大的碑前面。（眼神开始散）那块碑上……刻着我的名字。（忽然清醒了一下，抓得更紧）不对，不是我的名字。（盯着你）是你的。","extra":"他已死，只在回忆中出现。他留下的两句话是全篇最重要的伏笔之一，且互相矛盾（别信任何人，包括我 / 碑上刻的是你的名字）。","createdAt":0,"updatedAt":0}],"world":{"id":"w-jiuxiao","name":"九霄烬世录：石碑裂了","icon":"🗿","setting":"【世界】天地初开，混沌化三千大道。世间有九座天域、三十六方灵洲、无数小世界。\n三万年前，天地发生「九霄崩天」——九座天门一夜之间全部关闭，所有试图飞升的修士尽数陨落。\n自那以后，再无人真正飞升。\n有人说仙界已覆灭，有人说仙界主动斩断了联系，还有人说，所谓飞升，不过是一场持续百万年的骗局。\n\n【地理】凡尘九州：东荒（宗门林立）、南离（皇朝世家）、北寒（冰封遗迹）、西漠（佛魔并存）、中神（九州核心）、苍玄（妖兽横行）、云泽（水族）、雷泽（雷霆）、幽冥（鬼修禁地）。\n凡境之后是三千灵域，再上是九霄天域，最深处是天外之境。\n\n【修炼】凡境：炼体 → 炼气 → 筑基 → 紫府 → 金丹 → 元婴 → 化神。每境分初、中、后、圆满。\n越级挑战需要功法、神通、法宝、体质或战斗智慧，不靠主角身份。\n\n【势力】正道：太玄剑宗（东荒顶级剑道宗门）、天衍道宗（推演天机、阵法符箓）、瑶池圣地（女修圣地）、万法仙宗（功法渊海）。\n魔道：血煞魔宗、幽冥殿、天魔宫。妖族：万妖山、龙渊、凤凰岭、天狐古族。隐世：长生世家、上古遗族、禁区生灵、天外道统。\n\n【此刻】东荒州，青云城，落霞镇。大雨连绵三日。三年一度的仙门收徒仪式正在广场举行，太玄剑宗来了三个人。\n青玉石碑立在广场中央，测了三百多个孩子，一声没吭。","playerRole":"十七岁，落霞镇人，父母早亡，跟着舅舅长大。\n灵根：无。彻底的凡骨——石碑在你手下半点反应都没有。\n境界：炼体境一层（镇上武馆学过两年拳脚，仅此而已）。\n刚才的场景：主持仪式的赵执事挥挥手让你「滚下去，别耽误时间」，你跪在石碑前，听见身后有人笑。\n然后石碑就裂了。","systems":"【九字·未名】\n石碑裂开的一瞬间，有九个字从碎石里浮出来。它们不是任何你认识的字，但你看得懂。\n它们没有声音，却直接压进了你的脑子里。\n\n· **九字各封一物**：每解开一个字，你会得到一样东西（功法、神通、体质、记忆、或者别的什么）。\n· **解字需要代价**：不是修炼就能解，需要「触发条件」（某个地点、某个人、某件事）。条件未满足时，那个字就是一块石头。\n· **解一个，来一批**：每解开一个字，天地间会有更多的东西「注意」到你。\n\n【道韵】0~9。已解开的古字数。每解一个，实力跃升一次，追杀也升级一次。\n【境界】炼体境一层起步。凡骨，修炼速度极慢——这是硬设定，不要开挂。\n【灵根】无。这一点不会变，但「无灵根」本身可能就是某种答案。\n【因果】不显示数值。你每解开一个字，就会有新的势力知道「落霞镇出了个东西」。\n\n⚠️ 道韵、境界必须每轮如实更新。凡骨就是凡骨，不许因为「主角光环」突然变强。","opening":"青玉石碑炸开的时候，你正跪在地上。\n\n不是被吓的——是刚才测灵根时，石碑半点反应也没有。主持仪式的赵执事挥了挥手，说：滚下去，别耽误时间。\n\n你跪在那儿，听见身后有人笑。\n\n然后石碑就裂了。\n\n不是裂一道缝。是从中间劈开，像被什么东西从里面撞碎。碎石溅在你脸上，火辣辣地疼。\n\n太玄剑宗那三位修士同时站了起来。\n\n其中年纪最大的那位，脸色在一瞬间白得像纸。\n\n而他看的不是石碑。\n\n是你。\n\n碎石落地，广场上死一样安静。你听见自己脑子里有个声音，很轻，像是从很远的地方传来：\n\n「……三十万年了。」\n\n「你终于来了。」","rules":"1. 这是《九霄烬世录》的凡尘开篇。核心是「凡骨少年撞上了足以翻天的事件」，不是一路开挂的爽文。主角起步极低（炼体境一层、无灵根），每一次变强都要有真实代价。\n2. 九字古字是主角独有，但解开条件苛刻、代价沉重、且每解一个就引来更多觊觎。绝不是想解就解。\n3. 每个 NPC 都有自己的目的：苏挽奉命带你走但自己也存疑；沈昭要的是答案不是人；阿箬只懂最朴素的道理；顾长庚已死，只在回忆里留线索。\n4. 修仙界残酷但不猎奇。可以有死亡与背叛，但不写血腥猎奇的细节。\n5. 世界不围绕主角运转。宗门、势力、其他人物都有各自的事，会在背景中推进。\n6. 战斗按叙事推演：境界、功法、法宝、灵力、经验、地形、情报、临场判断综合决定，主角可以输。\n7. 不要一次给出所有秘密。「三十万年」「九个字」「石碑为什么认你」「九霄崩天」都要层层揭开。\n8. 场景正文必须达到开头规定的字数区间，必须分成 3~4 个自然段，段与段之间空一行。\n\n# 开局即王炸：八轮钩子节奏\n注意：这个卡包没有铺垫期。第一轮就已经在命案现场，之后每一轮都要往前推。\n\n第 1 轮：炸碑\n· 石碑已裂，三位修士一死一伤一护，你是全场唯一「有反应」的人。\n· 脑子里那个声音说「三十万年了，你终于来了」。\n· 玩家必须立刻面对：站 / 逃 / 说话 / 装晕。\n· 本轮必须完成：建立「你成了漩涡中心」，让玩家感受到全场的目光。\n\n第 2 轮：护送还是押送\n· 苏挽要带你走。她说是「奉命」，但语气不确定。\n· 广场上其他孩子开始退开，赵执事的脸色变了三变。\n· 本轮必须完成：苏挽登场、一个明确的疑问（她到底听谁的命令）。\n\n第 3 轮：第一个字\n· 危急时刻，九个古字里的第一个会「亮」一下。\n· 触发它需要一个具体条件（由 GM 根据前两轮玩家的行为决定，比如「听见某句话」「握住某样东西」「流够多少血」）。\n· 本轮必须完成：第一次解字、明确的实力变化、以及代价（不是免费的）。\n\n第 4 轮：第三方登场\n· 沈昭提前三天出现在官道上。他说「今日此地有大变」，但算不出变数是谁。\n· 他要带走你。苏挽不让。\n· 本轮必须完成：沈昭登场、两方对峙、玩家被迫选边。\n\n第 5 轮：凡人的锚\n· 阿箬追上来，带着药和干粮。她不懂修仙界的规矩，说了几句让在场所有人噎住的话。\n· 本轮必须完成：阿箬登场、一个让玩家「心里软一下」的瞬间。\n\n第 6 轮：顾长庚的遗言\n· 通过回忆/留影/遗物，顾长庚的两句话被揭开：「别信任何人，包括我」和「碑上刻的是你的名字」。\n· 本轮必须完成：两句互相矛盾的伏笔、师父之死（或此人之死）的性质变复杂。\n\n第 7 轮：第一次重大选择\n· 跟着走（太玄剑宗 / 天衍道宗 / 谁都不跟自己逃），三条路各有代价。\n· 本轮必须完成：真正的分岔，选了就回不去。\n\n第 8 轮：第一个大悬念\n· 真凶或真相的影子第一次出现。比如：石碑的碎片在夜里自己拼起来了一角，上面刻着你的生辰；或者你梦见自己站在一块很大的碑前，碑上刻着你的名字。\n· 本轮必须完成：一个让玩家想立刻玩下一轮的钩子。","style":"400~550 字。第二人称。\n这一部要「炸」但不「飘」。文字要有重量：雨、石屑、血、铁锈味、广场上几百双眼睛。\n对话要短、要有压迫感。修仙界的人不说废话。\n不要解释设定。让玩家和主角一起，一点点摸黑。\n凡尘的质感很重要——阿箬的手上有茧，镇上的雨是脏的，血是温的。","length":"400~550 字","linked":["p-jx-su","p-jx-shen","p-jx-a","p-jx-gu"],"syncChat":false,"createdAt":0,"updatedAt":0}};
+
+  function ensureFirstPack() {
+    var FLAG = 'aisim.firstpack.v1';
+    try { if (localStorage.getItem(FLAG) === '1') return Promise.resolve(); } catch (e) { }
+    return DB.all('worlds').then(function (list) {
+      if (list && list.length) {
+        try { localStorage.setItem(FLAG, '1'); } catch (e) { }
+        return;
+      }
+      return importData(FIRST_PACK).then(function () {
+        try { localStorage.setItem(FLAG, '1'); } catch (e) { }
+      });
+    }).catch(function () { });
+  }
+
+  /* =========================================================
    * 启动
    * ========================================================= */
+  /* ---------------- 界面配色 ---------------- */
+  var THEME_KEY = 'aisim.theme.v1';
+  var THEMES = ['default', 'blue', 'gold', 'orange'];
+
+  function currentTheme() {
+    try {
+      var v = localStorage.getItem(THEME_KEY);
+      return THEMES.indexOf(v) >= 0 ? v : 'default';
+    } catch (e) { return 'default'; }
+  }
+
+  function applyTheme(name) {
+    var t = THEMES.indexOf(name) >= 0 ? name : 'default';
+    var b = document.body;
+    b.classList.remove('theme-blue', 'theme-gold', 'theme-orange');
+    if (t !== 'default') b.classList.add('theme-' + t);
+    try { localStorage.setItem(THEME_KEY, t); } catch (e) { }
+    var grid = $('#theme-grid');
+    if (grid) {
+      [].forEach.call(grid.querySelectorAll('.themebtn'), function (btn) {
+        btn.classList.toggle('on', btn.getAttribute('data-t') === t);
+      });
+    }
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      var colors = { default: '#0b0d12', blue: '#f4f7fc', gold: '#0a0806', orange: '#2b2e33' };
+      meta.setAttribute('content', colors[t] || '#0b0d12');
+    }
+  }
+
+  /* ---------------- 世界标签 ---------------- */
+  function getTagValue(sel) {
+    var el = document.querySelector(sel + ' .tag.on');
+    return el ? el.getAttribute('data-v') : '';
+  }
+
+  function setTagValue(sel, val) {
+    [].forEach.call(document.querySelectorAll(sel + ' .tag'), function (btn) {
+      btn.classList.toggle('on', btn.getAttribute('data-v') === val);
+    });
+  }
+
   function boot() {
+    applyTheme(currentTheme());
     bind();
-    renderList().then(function () {
+    ensureFirstPack().then(function () { return renderList(); }).then(function () {
       updateFoot();
       if (!hasUsableConfig()) {
         setTimeout(function () {
