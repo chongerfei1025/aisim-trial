@@ -862,3 +862,13 @@ body {
   #app { max-width: 720px; margin: 0 auto; width: 100%; box-shadow: 0 0 0 1px var(--line); }
   .sheet { max-width: 720px; margin: 0 auto; }
 }
+
+/* 列表页底部说明 */
+.list-note {
+  padding: 10px 24px 18px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--dim2);
+  letter-spacing: .2px;
+}
