@@ -180,6 +180,7 @@
     editing: null,       // 正在编辑的角色
     editingWorld: null,  // 正在编辑的世界
     personaMemory: {},   // 世界模式：关联角色的聊天记录缓存
+    worldMemoryForPersona: '',   // 角色模式：该角色在关联世界里的线下经历
     openToken: 0,        // 会话代次，用于丢弃过期的异步回调
     editingMsgId: null,  // 正在编辑的玩家消息 id
     lastAiEl: null
@@ -796,6 +797,54 @@
   }
 
   /* ---------------- 提示词构造 ---------------- */
+  /** 载入该角色在所有关联世界里的线下经历（供角色聊天时参考） */
+  function loadWorldMemoryForPersona(p) {
+    state.worldMemoryForPersona = '';
+    if (!p || !state.worlds || !state.worlds.length) return Promise.resolve();
+    var ws = state.worlds.filter(function (w) {
+      return (w.linked || []).indexOf(p.id) >= 0;   // 不受 syncChat 控制：那个开关管的是反方向
+    });
+    if (!ws.length) return Promise.resolve();
+    return DB.all('worldSaves').then(function (saves) {
+      var map = {};
+      (saves || []).forEach(function (s) { map[s.id] = s; });
+      state.worldMemoryForPersona = buildWorldMemory(ws, map);
+    }).catch(function () { state.worldMemoryForPersona = ''; });
+  }
+
+  /** 把世界剧情压缩成一段「线下经历」，控制总长度避免撑爆上下文 */
+  function buildWorldMemory(ws, saves) {
+    var out = [];
+    var total = 0;
+    var LIMIT = 1200;   // 总字数上限，约 1800 token
+    ws.forEach(function (w) {
+      var s = saves[w.id];
+      if (!s || !s.messages || !s.messages.length) return;
+      var recent = s.messages.filter(function (m) {
+        return m.content && !m.hidden && m.role === 'assistant';
+      }).slice(-6);
+      if (!recent.length) return;
+      var lines = recent.map(function (m) {
+        var t = String(m.content)
+          .replace(/【状态】[\s\S]*?(?=\n\n|$)/, '')
+          .replace(/\*?\*?【变化】\*?\*?[\s\S]*?(?=\n\n|$)/, '')
+          .replace(/\n---[\s\S]*$/, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        return '· ' + t.slice(0, 160);
+      }).filter(function (x) { return x.length > 4; });
+      if (!lines.length) return;
+      var block = '## 在《' + (w.name || '那个世界') + '》里（最近 ' + lines.length + ' 幕）\n' + lines.join('\n');
+      if (total + block.length > LIMIT) {
+        if (total === 0) { out.push(block.slice(0, LIMIT)); total = LIMIT; }
+        return;
+      }
+      total += block.length;
+      out.push(block);
+    });
+    return out.join('\n\n');
+  }
+
   function buildSystemPrompt(p) {
     var user = state.settings.userName || '你';
     var fill = function (t) {
@@ -812,6 +861,12 @@
     if (p.personality) s += '# 性格与说话方式\n' + fill(p.personality) + '\n\n';
     if (p.scenario) s += '# 场景\n' + fill(p.scenario) + '\n\n';
     if (p.example) s += '# 对话示例（仅用于学习语气，不要复述）\n' + fill(p.example) + '\n\n';
+    if (state.worldMemoryForPersona) {
+      s += '# 你和' + user + '的线下经历（剧情里真实发生过，聊天时可以自然提起）\n';
+      s += '以下是你们在剧情世界里一起经历过的事。聊天时如果话题相关，可以自然地提到（比如「上次在那条山道上」），'
+        + '但不要生硬复述，也不要主动长篇回顾。没被问到就当作背景记忆。\n\n';
+      s += state.worldMemoryForPersona + '\n\n';
+    }
     s += '# 扮演规则\n';
     s += '1. 永远以「' + (p.name || '角色') + '」的第一人称身份说话，全程不出戏，绝不提及自己是 AI、模型或程序。\n';
     s += '2. 只输出「' + (p.name || '角色') + '」的台词与动作，绝不为「' + user + '」代写台词、心理活动或行为。\n';
@@ -1333,6 +1388,8 @@
     // 世界模式：先把关联角色的线上聊天读进内存
     if (isWorld) {
       try { await loadPersonaMemory(w); } catch (e) { /* 读不到就跳过 */ }
+    } else {
+      try { await loadWorldMemoryForPersona(p); } catch (e) { state.worldMemoryForPersona = ''; }
     }
 
     // 等待期间会话可能已被重开 / 切换，直接放弃这次生成
