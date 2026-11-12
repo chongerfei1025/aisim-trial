@@ -243,89 +243,126 @@
 
   function renderPersonaList() {
     return DB.all('personas').then(function (list) {
-      state.personas = (list || []).sort(function (a, b) {
+      state.personas = (list || []).slice().sort(function (a, b) {
         return (b.updatedAt || 0) - (a.updatedAt || 0);
       });
-      return DB.all('sessions');
-    }).then(function (sessions) {
-      var map = {};
-      (sessions || []).forEach(function (s) { map[s.id] = s; });
+      return DB.all('worlds');
+    }).then(function (worlds) {
+      state.worlds = (worlds || []).slice();
+      var byId = {};
+      state.worlds.forEach(function (w) { byId[w.id] = w; });
 
       elList.innerHTML = '';
+
       if (!state.personas.length) {
         elList.innerHTML =
-          '<div class="empty"><span class="big">💬</span>' +
+          '<div class="empty"><span class="big">🙂</span>' +
           '还没有角色<br/>点右上角 <b>＋</b> 新建，或 <b>⇩</b> 导入角色卡' +
           '</div>';
         return;
       }
+
+      // 按所属世界分组
+      var groups = [];
+      var gmap = {};
       state.personas.forEach(function (p) {
-        var s = map[p.id];
-        var msgs = (s && s.messages) ? s.messages.filter(function (m) { return !m.hidden; }) : [];
-        var last = msgs.length ? msgs[msgs.length - 1] : null;
-        var preview = last
-          ? (last.role === 'user' ? '我：' : '') + last.content.replace(/[#*`>\n]/g, ' ').replace(/\s+/g, ' ')
-          : (p.firstMes || p.description || '').replace(/\s+/g, ' ');
+        var wid = p.worldId && byId[p.worldId] ? p.worldId : '';
+        // 老数据没有 worldId：从世界的 linked 反推
+        if (!wid) {
+          state.worlds.forEach(function (w) {
+            if (!wid && (w.linked || []).indexOf(p.id) >= 0) wid = w.id;
+          });
+        }
+        if (!gmap[wid]) {
+          gmap[wid] = { wid: wid, world: byId[wid] || null, list: [] };
+          groups.push(gmap[wid]);
+        }
+        gmap[wid].list.push(p);
+      });
 
-        // 未读：上次进来之后新增的角色消息
-        var lr = (s && s.lastReadTs) || 0;
-        var unread = msgs.filter(function (m) {
-          return m.role === 'assistant' && (m.ts || 0) > lr;
-        }).length;
+      // 有世界的排前面，未归属的排最后
+      groups.sort(function (a, b) {
+        if (a.wid && !b.wid) return -1;
+        if (!a.wid && b.wid) return 1;
+        if (a.wid && b.wid) {
+          return (a.world.name || '').localeCompare(b.world.name || '', 'zh');
+        }
+        return 0;
+      });
 
-        var card = document.createElement('div');
-        card.className = 'pcard';
-        card.dataset.id = p.id;
+      groups.forEach(function (g) {
+        var head = document.createElement('div');
+        head.className = 'wgroup';
 
-        var av = document.createElement('div');
-        av.className = 'pav';
-        av.textContent = p.avatar || '🙂';
+        var icon = document.createElement('span');
+        icon.className = 'wg-icon';
+        icon.textContent = g.world ? (g.world.icon || '🌍') : '📁';
 
-        var info = document.createElement('div');
-        info.className = 'pinfo';
-
-        var row1 = document.createElement('div');
-        row1.className = 'prow1';
         var nm = document.createElement('span');
-        nm.className = 'pname';
-        nm.textContent = p.name || '未命名';
-        var tm = document.createElement('span');
-        tm.className = 'ptime';
-        tm.textContent = fmtListTime((last && last.ts) || p.updatedAt);
-        row1.appendChild(nm);
-        row1.appendChild(tm);
+        nm.className = 'wg-name';
+        nm.textContent = g.world ? (g.world.name || '未命名世界') : '未归属角色';
 
-        var row2 = document.createElement('div');
-        row2.className = 'prow2';
-        var pv = document.createElement('span');
-        pv.className = 'pprev';
-        pv.textContent = preview ? preview.slice(0, 60) : '点击开始对话';
-        row2.appendChild(pv);
-        if (unread > 0) {
-          var bd = document.createElement('span');
-          bd.className = 'pbadge';
-          bd.textContent = unread > 99 ? '99+' : String(unread);
-          row2.appendChild(bd);
+        var cnt = document.createElement('span');
+        cnt.className = 'wg-count';
+        cnt.textContent = g.list.length;
+
+        head.appendChild(icon);
+        head.appendChild(nm);
+        head.appendChild(cnt);
+
+        if (g.world) {
+          head.addEventListener('click', function () { openWorldEditor(g.world); });
         }
 
-        info.appendChild(row1);
-        info.appendChild(row2);
-        card.appendChild(av);
-        card.appendChild(info);
+        elList.appendChild(head);
 
-        var editBtn = document.createElement('button');
-        editBtn.type = 'button';
-        editBtn.className = 'card-edit';
-        editBtn.title = '编辑角色卡';
-        editBtn.textContent = '✎';
-        editBtn.addEventListener('click', function (e) {
-          e.stopPropagation();
-          openPersonaEditor(p);
+        g.list.forEach(function (p) {
+          var card = document.createElement('div');
+          card.className = 'pcard';
+          card.dataset.id = p.id;
+
+          var av = document.createElement('div');
+          av.className = 'pav';
+          av.textContent = p.avatar || '🙂';
+
+          var info = document.createElement('div');
+          info.className = 'pinfo';
+
+          var row1 = document.createElement('div');
+          row1.className = 'prow1';
+          var nm2 = document.createElement('span');
+          nm2.className = 'pname';
+          nm2.textContent = p.name || '未命名';
+          row1.appendChild(nm2);
+
+          var row2 = document.createElement('div');
+          row2.className = 'prow2';
+          var pv = document.createElement('span');
+          pv.className = 'pprev';
+          var desc = (p.description || p.personality || '').replace(/\s+/g, ' ');
+          pv.textContent = desc ? desc.slice(0, 40) : '点击编辑角色卡';
+          row2.appendChild(pv);
+
+          info.appendChild(row1);
+          info.appendChild(row2);
+          card.appendChild(av);
+          card.appendChild(info);
+
+          var editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'card-edit';
+          editBtn.title = '编辑角色卡';
+          editBtn.textContent = '✎';
+          editBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            openPersonaEditor(p);
+          });
+          card.appendChild(editBtn);
+
+          // ★ 点卡片 = 编辑（不再进入聊天）
+          card.addEventListener('click', function () { openPersonaEditor(p); });
+          elList.appendChild(card);
         });
-        card.appendChild(editBtn);
-
-        card.addEventListener('click', function () { openChat(p.id); });
-        elList.appendChild(card);
       });
     }).catch(function (e) {
       elList.innerHTML = '<div class="empty">读取数据失败：' + (e && e.message ? e.message : e) + '</div>';
@@ -413,11 +450,13 @@
       }).catch(function () { });
       return;
     }
-    DB.all('sessions').then(function (ss) {
-      var total = 0;
-      (ss || []).forEach(function (s) { total += (s.messages || []).length; });
-      $('#list-foot').textContent = state.personas.length + ' 个角色 · ' + total + ' 条消息 · 数据仅存本机';
-    }).catch(function () { });
+    // 角色模式已改为纯管理：只统计角色数，不再统计聊天消息
+    var nWorlds = 0;
+    var seen = {};
+    (state.personas || []).forEach(function (p) {
+      if (p.worldId && !seen[p.worldId]) { seen[p.worldId] = 1; nWorlds++; }
+    });
+    $('#list-foot').textContent = state.personas.length + ' 个角色 · ' + nWorlds + ' 个世界 · 数据仅存本机';
   }
 
   /* =========================================================
@@ -837,24 +876,49 @@
   function buildWorldMemory(ws, saves) {
     var out = [];
     var total = 0;
-    var LIMIT = 1200;   // 总字数上限，约 1800 token
+    var LIMIT = 3000;      // 总字数上限（原来 1200 太小，角色常有"记忆对不上"的感觉）
+    var PER_SCENE = 260;   // 每幕保留字数（原来 160，砍掉了太多细节）
+    var SCENES = 12;       // 保留幕数（原来 6）
+
     ws.forEach(function (w) {
       var s = saves[w.id];
       if (!s || !s.messages || !s.messages.length) return;
+
       var recent = s.messages.filter(function (m) {
         return m.content && !m.hidden && m.role === 'assistant';
-      }).slice(-6);
+      }).slice(-SCENES);
       if (!recent.length) return;
+
       var lines = recent.map(function (m) {
-        var t = String(m.content)
-          .replace(/【状态】[\s\S]*?(?=\n\n|$)/, '')
-          .replace(/\*?\*?【变化】\*?\*?[\s\S]*?(?=\n\n|$)/, '')
-          .replace(/\n---[\s\S]*$/, '')
+        var raw = String(m.content);
+
+        // ① 抓出状态块里的时间/地点/处境（这是最可靠的记忆锚点，不能丢）
+        var anchor = '';
+        var st = raw.match(/\*{0,2}【状态】\*{0,2}([\s\S]*?)(?=\n\s*\n|$)/);
+        if (st) {
+          var parts = [];
+          String(st[1]).split('\n').forEach(function (ln) {
+            var t = ln.replace(/^[\s·•\-\*]+/, '').replace(/\*/g, '').trim();
+            if (t) parts.push(t);
+          });
+          if (parts.length) anchor = '[' + parts.join(' / ').slice(0, 80) + '] ';
+        }
+
+        // ② 正文：去掉状态块、变化块、选项
+        var body = raw
+          .replace(/\*{0,2}【(?:状态|变化)】\*{0,2}[\s\S]*?(?=\n\s*\n|$)/g, '')
+          .replace(/\n\s*---[\s\S]*$/, '')
+          .replace(/\*\*/g, '')
+          .replace(/【(?:状态|变化)】/g, '')
           .replace(/\s+/g, ' ')
           .trim();
-        return '· ' + t.slice(0, 160);
-      }).filter(function (x) { return x.length > 4; });
+
+        var line = anchor + body.slice(0, PER_SCENE);
+        return '· ' + line.trim();
+      }).filter(function (x) { return x.length > 6; });
+
       if (!lines.length) return;
+
       var block = '## 在《' + (w.name || '那个世界') + '》里（最近 ' + lines.length + ' 幕）\n' + lines.join('\n');
       if (total + block.length > LIMIT) {
         if (total === 0) { out.push(block.slice(0, LIMIT)); total = LIMIT; }
@@ -863,6 +927,7 @@
       total += block.length;
       out.push(block);
     });
+
     return out.join('\n\n');
   }
 
@@ -1657,6 +1722,27 @@
     $('#p-first').value = p.firstMes || '';
     $('#p-example').value = p.example || '';
     $('#p-extra').value = p.extra || '';
+
+    // 填充「所属世界」下拉
+    var sel = $('#p-world');
+    if (sel) {
+      sel.innerHTML = '<option value="">（不归属任何世界）</option>';
+      (state.worlds || []).forEach(function (w) {
+        var o = document.createElement('option');
+        o.value = w.id;
+        o.textContent = (w.icon || '🌍') + ' ' + (w.name || '未命名世界');
+        sel.appendChild(o);
+      });
+      // 反推：没有 worldId 的老数据，从 world.linked 里找
+      var wid = p.worldId || '';
+      if (!wid) {
+        (state.worlds || []).forEach(function (w) {
+          if (!wid && (w.linked || []).indexOf(p.id) >= 0) wid = w.id;
+        });
+      }
+      sel.value = wid;
+    }
+
     $('#p-delete').classList.toggle('hidden', !persona);
     openSheet('#sheet-persona');
     setTimeout(function () { autoGrowAll($('#sheet-persona')); }, 60);
@@ -1675,9 +1761,32 @@
     p.firstMes = $('#p-first').value.trim();
     p.example = $('#p-example').value.trim();
     p.extra = $('#p-extra').value.trim();
+
+    // 所属世界
+    var selW = $('#p-world');
+    var newWid = selW ? selW.value : '';
+    var oldWid = p.worldId || '';
+    p.worldId = newWid;
     p.updatedAt = now();
 
-    DB.put('personas', p).then(function () {
+    // 同步 world.linked（双向一致）
+    var syncWorlds = (state.worlds || []).map(function (w) {
+      var linked = (w.linked || []).slice();
+      var has = linked.indexOf(p.id) >= 0;
+      if (w.id === newWid && !has) {
+        linked.push(p.id);
+        return DB.put('worlds', Object.assign({}, w, { linked: linked }));
+      }
+      if (w.id !== newWid && has && w.id === oldWid) {
+        linked = linked.filter(function (x) { return x !== p.id; });
+        return DB.put('worlds', Object.assign({}, w, { linked: linked }));
+      }
+      return Promise.resolve();
+    });
+
+    Promise.all(syncWorlds).then(function () {
+      return DB.put('personas', p);
+    }).then(function () {
       closeSheet();
       renderList().then(updateFoot);
       if (state.personaId === p.id) {
@@ -1871,6 +1980,21 @@
         if (nid && linked.indexOf(nid) < 0) linked.push(nid);
       });
       w.linked = linked;
+      // 同步写入角色的 worldId，方便按世界分组显示
+      var allP = (data.personas || []).map(function (raw) {
+        return idmap[raw.id] || idmap['n:' + (raw.name || '')];
+      }).filter(Boolean);
+      allP.forEach(function (pid) {
+        if (linked.indexOf(pid) < 0) return;
+        chain = chain.then(function () {
+          return DB.get('personas', pid).then(function (pp) {
+            if (pp && !pp.worldId) {
+              pp.worldId = w.id;
+              return DB.put('personas', pp);
+            }
+          });
+        });
+      });
       chain = chain.then(function () { return DB.put('worlds', w); });
       return chain.then(function () {
         state.tab = 'world';

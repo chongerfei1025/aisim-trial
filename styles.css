@@ -1158,3 +1158,29 @@ body.t-paper .msg.rich .bubble .dlg {
   font-family: "Noto Serif SC", "Songti SC", serif;
   font-weight: 600;
 }
+
+/* 角色列表：按世界分组 */
+.wgroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 6px 8px;
+  font-size: 12.5px;
+  color: var(--dim);
+  letter-spacing: .3px;
+  cursor: pointer;
+  user-select: none;
+}
+.wgroup:first-child { padding-top: 6px; }
+.wg-icon { font-size: 15px; line-height: 1; }
+.wg-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.wg-count {
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--card2);
+  border: 1px solid var(--line);
+  color: var(--dim2);
+}
+body.t-paper .wgroup { color: #7a7368; }
+body.t-paper .wg-count { background: #efece4; border-color: #e0d9cb; }
