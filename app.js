@@ -62,7 +62,7 @@
   var LS_KEY = 'aisim.settings.v1';
 
   /* 配置版本：改这个数字，所有设备下次打开会自动套用下面的默认配置 */
-  var CONFIG_VERSION = 3;
+  var CONFIG_VERSION = 4;
 
   /* 内置试用 Key：分片存放，避免在源码里成为一整串可直接复制的明文 */
   var PRESET_KEY = [
@@ -78,7 +78,7 @@
     temperature: 0.95,
     maxTokens: 2048,
     userName: '你',
-    contextMessages: 30,
+    contextMessages: 80,
     stream: true,
     tts: false,
     _v: CONFIG_VERSION
@@ -99,6 +99,10 @@
       saved.model = DEFAULT_SETTINGS.model;
       // 只有内置了 Key 才覆盖；部署版（Key 留空）必须保留用户自己填的那一份
       if (DEFAULT_SETTINGS.apiKey) saved.apiKey = DEFAULT_SETTINGS.apiKey;
+      // 上下文条数：旧默认 30 太小（只够 15 轮，早期剧情会被挤掉），升到 80
+      if (Number(saved.contextMessages) === 30 || !saved.contextMessages) {
+        saved.contextMessages = DEFAULT_SETTINGS.contextMessages;
+      }
       saved._v = CONFIG_VERSION;
       try { localStorage.setItem(LS_KEY, JSON.stringify(saved)); } catch (e) { }
     }
