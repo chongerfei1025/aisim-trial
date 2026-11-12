@@ -1723,24 +1723,33 @@
     $('#p-example').value = p.example || '';
     $('#p-extra').value = p.extra || '';
 
-    // 填充「所属世界」下拉
+    // 填充「所属世界」下拉（主动读库，避免 state.worlds 还没加载时只剩默认项）
     var sel = $('#p-world');
     if (sel) {
       sel.innerHTML = '<option value="">（不归属任何世界）</option>';
-      (state.worlds || []).forEach(function (w) {
-        var o = document.createElement('option');
-        o.value = w.id;
-        o.textContent = (w.icon || '🌍') + ' ' + (w.name || '未命名世界');
-        sel.appendChild(o);
-      });
-      // 反推：没有 worldId 的老数据，从 world.linked 里找
-      var wid = p.worldId || '';
-      if (!wid) {
-        (state.worlds || []).forEach(function (w) {
-          if (!wid && (w.linked || []).indexOf(p.id) >= 0) wid = w.id;
+      DB.all('worlds').then(function (list) {
+        var ws = (list || []).slice().sort(function (a, b) {
+          return (a.name || '').localeCompare(b.name || '', 'zh');
         });
-      }
-      sel.value = wid;
+        state.worlds = ws;
+
+        sel.innerHTML = '<option value="">（不归属任何世界）</option>';
+        ws.forEach(function (w) {
+          var o = document.createElement('option');
+          o.value = w.id;
+          o.textContent = (w.icon || '🌍') + ' ' + (w.name || '未命名世界');
+          sel.appendChild(o);
+        });
+
+        // 反推：没有 worldId 的老数据，从 world.linked 里找
+        var wid = p.worldId || '';
+        if (!wid) {
+          ws.forEach(function (w) {
+            if (!wid && (w.linked || []).indexOf(p.id) >= 0) wid = w.id;
+          });
+        }
+        sel.value = wid;
+      }).catch(function () { });
     }
 
     $('#p-delete').classList.toggle('hidden', !persona);
