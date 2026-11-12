@@ -21,6 +21,8 @@
 /* ============ 三套视觉风格 ============ */
 /* ① 深空暗金（默认）*/
 body.t-gold {
+  --dlg-bar: rgba(224,169,46,.55);
+
   --bar-bg: rgba(11, 9, 5, .9);
   --h1-a: #f3e8d2;
   --h1-b: #e0a92e;
@@ -42,6 +44,8 @@ body.t-gold {
 
 /* ② 书页极简 */
 body.t-paper {
+  --dlg-bar: #c9bda6;
+
   --bar-bg: rgba(247, 244, 238, .94);
   --h1-a: #2a2a2a;
   --h1-b: #8b6f47;
@@ -63,6 +67,8 @@ body.t-paper {
 
 /* ③ 霓虹赛博 */
 body.t-cyber {
+  --dlg-bar: rgba(0,229,255,.5);
+
   --bar-bg: rgba(6, 9, 15, .9);
   --h1-a: #d6e4ff;
   --h1-b: #00e5ff;
@@ -1084,4 +1090,71 @@ body.t-cyber .msg-tools button {
   background: rgba(0,140,255,.06);
   border-color: rgba(0,229,255,.14);
   color: #63809f;
+}
+
+
+/* =====================================================
+   方案 3：对话高亮 + 状态栏 chips
+   ===================================================== */
+
+/* 对话：行内金色，不标名字 */
+/* 隐藏【状态】【变化】标签 */
+.st-hide { display: none !important; }
+
+/* 对话独立成行：从段落里站出来，带左侧竖线 */
+.msg.rich .bubble .dlg {
+  display: block;
+  margin: 8px 0 8px 2px;
+  padding-left: 12px;
+  border-left: 2px solid var(--dlg-bar, rgba(224,169,46,.5));
+  color: var(--dlg-color, #ffd980);
+  font-weight: 500;
+  line-height: 1.75;
+}
+
+/* 状态栏：把 · 列表排成一行 chips */
+.msg.rich .bubble ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 9px 0 14px;
+}
+.msg.rich .bubble li {
+  font-size: 11.5px !important;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--chip-bg, rgba(224,169,46,.08));
+  border: 1px solid var(--chip-line, rgba(224,169,46,.2));
+  color: var(--chip-text, #c9b78f);
+  line-height: 1.65;
+  margin: 0 !important;
+}
+.msg.rich .bubble li::before { content: none !important; }
+
+/* 三套主题的对话色与 chip 配色 */
+body.t-gold {
+  --dlg-color: #ffd980;
+  --chip-bg: rgba(224,169,46,.08);
+  --chip-line: rgba(224,169,46,.22);
+  --chip-text: #c9b78f;
+}
+body.t-paper {
+  --dlg-color: #8b6f47;
+  --chip-bg: #efece4;
+  --chip-line: #e0d9cb;
+  --chip-text: #5a5045;
+}
+body.t-cyber {
+  --dlg-color: #7df9ff;
+  --chip-bg: rgba(0,229,255,.06);
+  --chip-line: rgba(0,229,255,.18);
+  --chip-text: #7d9dc4;
+}
+
+/* 书页主题：对话用衬线加粗，不加辉光 */
+body.t-paper .msg.rich .bubble .dlg {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-weight: 600;
 }

@@ -649,12 +649,21 @@
     t = t.replace(/^[ \t]*---[ \t]*$/gm, '<hr>');
     t = t.replace(/^[ \t]*#{1,4}[ \t]+(.+)$/gm, '<h3>$1</h3>');
     t = t.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+    /* 隐藏【状态】【变化】这两个标签本身（chips 已经表达了它们） */
+    t = t.replace(/<b>【(?:状态|变化)】<\/b>/g, '<span class="st-hide"></span>');
+    t = t.replace(/【(?:状态|变化)】/g, '<span class="st-hide"></span>');
     // 列表项（· - • 开头）
+    /* 对话高亮：行内金色，不标说话人（方案 3） */
+    t = t.replace(/「([^」\n]{1,160})」/g, '<span class="dlg">「$1」</span>');
+    t = t.replace(/&quot;([^\n]{1,160}?)&quot;/g, '<span class="dlg">&quot;$1&quot;</span>');
     t = t.replace(/^[ \t]*[-·•][ \t]+(.+)$/gm, '<li>$1</li>');
     t = t.replace(/(?:<li>[^\n]*<\/li>[ \t]*\n?)+/g, function (m) {
       return '<ul>' + m.replace(/\n/g, '') + '</ul>';
     });
     t = t.replace(/\n/g, '<br>');
+    /* 对话块前后不留多余 br（display:block 已经负责换行） */
+    t = t.replace(/(<\/span>)(?:<br>)+/g, '$1');
+    t = t.replace(/(?:<br>)+(<span class="dlg">)/g, '$1');
     return t;
   }
 
