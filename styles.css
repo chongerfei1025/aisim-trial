@@ -1112,16 +1112,16 @@ body.t-cyber .msg-tools button {
   line-height: 1.75;
 }
 
-/* 状态栏：把 · 列表排成一行 chips */
-.msg.rich .bubble ul {
+/* ---------- 状态栏 chips：只作用于紧跟【状态】的那个列表 ---------- */
+.msg.rich .bubble .st-hide + ul {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   list-style: none;
   padding: 0;
-  margin: 9px 0 14px;
+  margin: 10px 0 14px;
 }
-.msg.rich .bubble li {
+.msg.rich .bubble .st-hide + ul li {
   font-size: 11.5px !important;
   padding: 4px 11px;
   border-radius: 999px;
@@ -1130,8 +1130,45 @@ body.t-cyber .msg-tools button {
   color: var(--chip-text, #c9b78f);
   line-height: 1.65;
   margin: 0 !important;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
-.msg.rich .bubble li::before { content: none !important; }
+.msg.rich .bubble .st-hide + ul li::before { content: none !important; }
+
+/* ---------- 正文里的普通列表：小圆点 + 紧凑行距，不要胶囊 ---------- */
+.msg.rich .bubble ul {
+  display: block;
+  margin: 6px 0 10px;
+  padding: 0;
+  list-style: none;
+  list-style-type: none;
+}
+.msg.rich .bubble li {
+  position: relative;
+  display: block;
+  padding: 0 0 0 13px;
+  margin: 0;
+  list-style: none;
+  list-style-type: none;
+  border: none;
+  border-radius: 0;
+  background: none;
+  font-size: inherit;
+  line-height: 1.85;
+  color: inherit;
+}
+.msg.rich .bubble li::marker { content: none; }
+.msg.rich .bubble li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: .8em;
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: var(--dim2);
+  opacity: .7;
+}
 
 /* 三套主题的对话色与 chip 配色 */
 body.t-gold {
@@ -1184,3 +1221,20 @@ body.t-paper .msg.rich .bubble .dlg {
 }
 body.t-paper .wgroup { color: #7a7368; }
 body.t-paper .wg-count { background: #efece4; border-color: #e0d9cb; }
+
+/* 列表项里的引号保持行内，不要撑成独立块（否则列表会被打散） */
+.msg.rich .bubble li .dlg {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border-left: none;
+  font-weight: 500;
+}
+/* 列表项本身的内边距收紧，圆点对齐 */
+.msg.rich .bubble li {
+  padding: 3px 0 3px 15px;
+}
+.msg.rich .bubble li::before {
+  top: .95em;
+  left: 4px;
+}
