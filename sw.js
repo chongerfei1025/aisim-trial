@@ -1,5 +1,5 @@
 /* Service Worker — 网络优先（改代码立即生效），断网回落缓存；API 请求永不缓存 */
-const CACHE = 'aisim-v5';
+const CACHE = 'aisim-v6';
 const ASSETS = [
   './',
   'index.html',

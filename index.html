@@ -91,8 +91,10 @@
       <span>模型</span>
       <div class="row">
         <input id="s-model" placeholder="deepseek-chat" autocapitalize="off" autocorrect="off" spellcheck="false" />
-        <button class="mini" id="s-models" type="button">拉取</button>
       </div>
+    </label>
+    <label class="field"><span>代理地址（可选 · 解决中转站跨域）</span>
+      <input id="s-proxy" placeholder="https://你的worker.workers.dev/" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
     </label>
     <div class="model-list" id="s-model-list"></div>
     <div class="field-2">
@@ -256,7 +258,6 @@
       <span>引用角色卡 —— 勾选后这些角色会作为 NPC 进入世界，严格遵守其人设</span>
       <div class="linked-list" id="w-linked"></div>
     </div>
-    <label class="switch"><input type="checkbox" id="w-sync" /><span>同步角色聊天记录<br/><small style="color:var(--dim2);font-size:11.5px">开启后 GM 能读到你和她们的线上聊天，剧情会主动呼应</small></span></label>
     <div class="row-actions">
       <button class="btn danger-ghost" id="w-delete" type="button">删除</button>
       <button class="btn primary" id="w-save" type="button">保存</button>
@@ -272,7 +273,7 @@
   </div>
   <div class="sheet-body">
     <button class="menu-item" id="m-edit">编辑角色卡</button>
-    <button class="menu-item" id="m-timeline">📜 时间线（线上聊天 + 世界剧情）</button>
+    <button class="menu-item" id="m-timeline">📜 时间线</button>
     <button class="menu-item" id="m-regen">重新生成上一条</button>
     <button class="menu-item" id="m-speak">朗读最后一条回复</button>
     <button class="menu-item" id="m-export">导出这段对话 (JSON)</button>

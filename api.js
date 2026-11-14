@@ -38,12 +38,21 @@
     if (!base) throw new Error('接口地址为空，请先在设置里填写 Base URL');
     var model = String(cfg.model || '').trim();
     if (!model && cfg.kind !== 'custom') throw new Error('模型名为空');
-    if (cfg.kind === 'anthropic') return base + '/v1/messages';
-    if (cfg.kind === 'gemini') {
-      return base + '/v1beta/models/' + encodeURIComponent(model) +
+    var real;
+    if (cfg.kind === 'anthropic') real = base + '/v1/messages';
+    else if (cfg.kind === 'gemini') {
+      real = base + '/v1beta/models/' + encodeURIComponent(model) +
              ':streamGenerateContent?alt=sse&key=' + encodeURIComponent(cfg.apiKey || '');
+    } else real = base + '/chat/completions';
+
+    /* 中转站大多不返回 CORS 头，浏览器直连会被拦。
+       填了代理地址就把真实 URL 拼在代理后面：PROXY?url=<encoded> */
+    var proxy = String(cfg.proxy || '').trim();
+    if (proxy) {
+      var sep = proxy.indexOf('?') >= 0 ? '&' : '?';
+      return proxy + sep + 'url=' + encodeURIComponent(real);
     }
-    return base + '/chat/completions';
+    return real;
   }
 
   function buildRequest(cfg, messages) {
@@ -228,9 +237,26 @@
       if (e && e.name === 'AbortError') throw e;
       var h = '';
       try { h = new URL(req.url).host; } catch (e4) { }
+      var msg = String((e && e.message) || e || '');
+
+      /* 浏览器跨域拦截的典型特征：TypeError / Failed to fetch，且拿不到任何响应体。
+         这不是网络问题，是对方没返回 Access-Control-Allow-Origin。 */
+      var isCors = /Failed to fetch|NetworkError|Load failed|TypeError/i.test(msg);
+      if (isCors && !cfg.proxy) {
+        throw new Error('【跨域被拦】' + h + ' 不允许浏览器直连\n' +
+          '浏览器安全策略会拦掉没有 CORS 头的接口，这不是 Key 或网络的问题。\n' +
+          '→ 解决办法：设置里填一个「代理地址」（Cloudflare Worker，免费），\n' +
+          '   请求会经它转发，不再受浏览器跨域限制。');
+      }
+      if (isCors && cfg.proxy) {
+        throw new Error('【代理失败】经代理连不上 ' + h + '\n' +
+          '→ 检查代理地址是否可访问；代理是否允许转发到这个域名；Cloudflare Worker 是否部署成功。\n' +
+          '原始错误：' + msg);
+      }
+
       throw new Error('连不上 ' + (h || req.url) + '\n' +
-        (e && e.message ? e.message : e) + '\n' +
-        '→ 检查手机网络；确认 Base URL 拼写正确；少数服务商不允许浏览器直连。');
+        msg + '\n' +
+        '→ 检查手机网络；确认 Base URL 拼写正确。');
     }
 
     if (!res.ok) {

@@ -75,6 +75,7 @@
     base: 'https://ark.cn-beijing.volces.com/api/v3',
     apiKey: PRESET_KEY,
     model: 'deepseek-v4-1-flash-261017',
+    proxy: '',
     temperature: 0.95,
     maxTokens: 2048,
     userName: '你',
@@ -1084,7 +1085,7 @@
     }
 
     // —— 线上聊天记忆（来自「角色」板块）——
-    if (w.syncChat !== false) {
+    if (false) {
     }
 
     s += '# 每次回复的固定结构（严格遵守）\n';
@@ -1184,6 +1185,7 @@
       base: s.base || prov.base,
       apiKey: s.apiKey || '',
       model: s.model || prov.model,
+      proxy: s.proxy || '',
       temperature: Number(s.temperature),
       maxTokens: Number(s.maxTokens) || 1024
     };
@@ -1790,7 +1792,6 @@
       style: '',
       length: '400~500 字',
       linked: [],
-      syncChat: false,
       createdAt: now(),
       updatedAt: now()
     };
@@ -1810,7 +1811,7 @@
     $('#w-rules').value = w.rules || '';
     $('#w-style').value = w.style || '';
     $('#w-length').value = w.length || '400~500 字';
-    $('#w-sync').checked = w.syncChat !== false;
+    if ($('#w-sync')) $('#w-sync').checked = w.syncChat !== false;
     var tg = w.tags || {};
     setTagValue('#tag-gender', tg.gender || '');
     setTagValue('#tag-genre', tg.genre || '');
@@ -1874,7 +1875,7 @@
     w.style = $('#w-style').value.trim();
     w.length = $('#w-length').value.trim() || '400~500 字';
     w.linked = $$('#w-linked .link-item.on').map(function (el) { return el.dataset.id; });
-    w.syncChat = $('#w-sync').checked;
+    if ($('#w-sync')) w.syncChat = $('#w-sync').checked;
     w.tags = {
       gender: getTagValue('#tag-gender'),
       genre: getTagValue('#tag-genre'),
@@ -1929,7 +1930,7 @@
       style: o.style || '',
       length: o.length || '400~500 字',
       linked: [],
-      syncChat: o.syncChat !== false,
+      syncChat: false,
       createdAt: now(),
       updatedAt: now()
     };
@@ -2210,6 +2211,7 @@
     $('#s-maxtok').value = s.maxTokens;
     $('#s-username').value = s.userName || '你';
     $('#s-ctx').value = s.contextMessages;
+    if ($('#s-proxy')) $('#s-proxy').value = s.proxy || '';
     $('#s-stream').checked = !!s.stream;
     $('#s-tts').checked = !!s.tts;
     $('#s-test-out').textContent = '';
@@ -2244,6 +2246,7 @@
       maxTokens: Math.max(64, Number($('#s-maxtok').value) || 1024),
       userName: $('#s-username').value.trim() || '你',
       contextMessages: Math.max(4, Math.min(200, Number($('#s-ctx').value) || 30)),
+    proxy: ($('#s-proxy') ? $('#s-proxy').value.trim() : ''),
       stream: $('#s-stream').checked,
       tts: $('#s-tts').checked,
       _v: CONFIG_VERSION
@@ -2375,7 +2378,8 @@
       if (p.model) $('#s-model').value = p.model;
       applyProviderHint();
     });
-    $('#s-models').addEventListener('click', function () {
+    var elModels = $('#s-models');
+    if (elModels) elModels.addEventListener('click', function () {
       var btn = this;
       var out = $('#s-test-out');
       var s = collectSettingsFromForm();
