@@ -947,12 +947,6 @@
     if (p.personality) s += '# 性格与说话方式\n' + fill(p.personality) + '\n\n';
     if (p.scenario) s += '# 场景\n' + fill(p.scenario) + '\n\n';
     if (p.example) s += '# 对话示例（仅用于学习语气，不要复述）\n' + fill(p.example) + '\n\n';
-    if (state.worldMemoryForPersona) {
-      s += '# 你和' + user + '的线下经历（剧情里真实发生过，聊天时可以自然提起）\n';
-      s += '以下是你们在剧情世界里一起经历过的事。聊天时如果话题相关，可以自然地提到（比如「上次在那条山道上」），'
-        + '但不要生硬复述，也不要主动长篇回顾。没被问到就当作背景记忆。\n\n';
-      s += state.worldMemoryForPersona + '\n\n';
-    }
     s += '# 扮演规则\n';
     s += '1. 永远以「' + (p.name || '角色') + '」的第一人称身份说话，全程不出戏，绝不提及自己是 AI、模型或程序。\n';
     s += '2. 只输出「' + (p.name || '角色') + '」的台词与动作，绝不为「' + user + '」代写台词、心理活动或行为。\n';
@@ -1091,14 +1085,6 @@
 
     // —— 线上聊天记忆（来自「角色」板块）——
     if (w.syncChat !== false) {
-      var chatMem = buildChatMemory(w);
-      if (chatMem) {
-        s += '# 线上聊天记忆（你和她们私下的手机聊天，剧情可以呼应）\n';
-        s += '下面是你和她们最近的真实聊天片段，代表你们的关系已经进展到了哪一步。'
-          + '在合适的时机自然地呼应——提起聊过的事、延续当时的情绪、沿用当时的称呼，但不要生硬复述原文。'
-          + '如果这些内容与世界设定冲突，以世界设定为准。\n\n';
-        s += chatMem + '\n\n';
-      }
     }
 
     s += '# 每次回复的固定结构（严格遵守）\n';
@@ -1123,15 +1109,6 @@
     s += '如果玩家上一步行动产生了结果，必须写出明确收益、推进或代价。\n\n';
     s += '第三部分：另起一行写 --- ，再用 3 条编号列出可选行动，每条不超过 25 字。\n\n';
 
-    s += '第四部分（可选）：角色发微信。\n';
-    s += '如果剧情里确实发生了「某个角色用手机给你发消息」的情况，在选项之后另起一行，按这个格式写：\n';
-    s += '【微信】角色名|她发的内容\n';
-    s += 'App 会自动把这行送去对应角色的聊天窗口，玩家在那里能看到。\n';
-    s += '规则：① 只有剧情里真的发生了才写，不要每轮都写，也不要为了用这个功能硬造情节；\n';
-    s += '② 一次写 1~4 条，像真人连发微信那样（先问一句、再补一句、最后一句情绪化的）；超过 4 条 App 会丢掉多余的；\n';
-    s += '③ 内容必须契合当前剧情（她刚看到的事、她的心情、刚才对话里的某个细节）；\n';
-    s += '④ 用角色自己的说话风格，像真人发微信，不要写成旁白或解说；⑤ 角色名必须是世界设定里已有的角色。\n';
-    s += '正文里仍然要自然地写出「你手机震了一下」这类动作，不要只留标记。\n\n';
 
     /* ★ 示例的篇幅决定模型的实际输出篇幅，这一段是控字数的真正开关 */
     s += '完整输出示例（严格模仿这个结构、换行与篇幅）：\n';
@@ -1502,12 +1479,7 @@
     setStreaming(true);
     scrollBottom();
 
-    // 世界模式：先把关联角色的线上聊天读进内存
-    if (isWorld) {
-      try { await loadPersonaMemory(w); } catch (e) { /* 读不到就跳过 */ }
-    } else {
-      try { await loadWorldMemoryForPersona(p); } catch (e) { state.worldMemoryForPersona = ''; }
-    }
+    // 角色与世界的记忆已解耦：不再互相注入
 
     // 等待期间会话可能已被重开 / 切换，直接放弃这次生成
     if (state.session !== mySession) {
@@ -1537,17 +1509,6 @@
       if (state.session !== mySession) return;   // 已被重开/切换，丢弃结果
       acc = full || acc;
       acc = sanitizeWorldOutput(acc);   // 第二道锁：删掉本世界不该有的【变化】块
-
-      // 世界剧情里角色发来的微信 → 转投到角色聊天窗口
-      if (state.mode === 'world') {
-        var wxLines = extractWechatLines(acc);
-        if (wxLines.length) {
-          acc = stripWechatLines(acc);
-          pushWechatMessages(wxLines).then(function (n) {
-            if (n > 0) toast('收到 ' + n + ' 条新消息');
-          });
-        }
-      }
 
       bubble.textContent = acc;
       if (!acc.trim()) bubble.textContent = '（没有收到内容，检查模型名 / 额度 / 接口是否支持流式）';
