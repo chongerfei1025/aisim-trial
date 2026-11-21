@@ -1031,7 +1031,62 @@
   /* =========================================================
    * 世界模式：GM 提示词
    * ========================================================= */
-  function buildWorldSystemPrompt(w) {
+  /* 剧情历程：把每轮状态块里的「处境」抽出来做成时间线。
+     这份清单钉在 system prompt 里，不占滑动窗口，
+     解决「玩久了早期剧情被挤掉、AI 记不住」的问题。 */
+  function buildStoryTimeline(save) {
+    if (!save || !save.messages || !save.messages.length) return '';
+    var items = [];
+
+    save.messages.forEach(function (m) {
+      if (m.role !== 'assistant' || !m.content) return;
+      var t = String(m.content);
+      var time = (t.match(/[·•\-]\s*时间[：:]\s*([^\n]+)/) || [])[1] || '';
+      var place = (t.match(/[·•\-]\s*地点[：:]\s*([^\n]+)/) || [])[1] || '';
+      var state = (t.match(/[·•\-]\s*处境[：:]\s*([^\n]+)/) || [])[1] || '';
+      state = state.replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
+      if (!state) return;
+      items.push({
+        time: time.replace(/\*\*/g, '').replace(/\s+/g, ' ').trim().slice(0, 24),
+        place: place.replace(/\*\*/g, '').replace(/\s+/g, ' ').trim().slice(0, 24),
+        state: state.slice(0, 46)
+      });
+    });
+
+    if (!items.length) return '';
+
+    // 连续重复的处境合并（AI 有时会连着几轮写差不多的）
+    var merged = [];
+    items.forEach(function (it) {
+      var last = merged[merged.length - 1];
+      if (last && last.state === it.state && last.place === it.place && last.time === it.time) return;
+      merged.push(it);
+    });
+
+    var MAX = 60;
+    var dropped = 0;
+    if (merged.length > MAX) {
+      dropped = merged.length - MAX;
+      merged = merged.slice(-MAX);
+    }
+
+    var lines = merged.map(function (it, i) {
+      var head = it.place || '';
+      if (it.time) head += (head ? ' · ' : '') + it.time;
+      return (dropped + i + 1) + '. ' + (head ? '[' + head + '] ' : '') + it.state;
+    });
+
+    var out = lines.join('\n');
+    if (dropped > 0) out = '（更早的 ' + dropped + ' 轮已省略，但都是真实发生过的）\n' + out;
+
+    var LIMIT = 2600;
+    if (out.length > LIMIT) {
+      out = out.slice(0, LIMIT) + '\n（…更早的省略）';
+    }
+    return out;
+  }
+
+  function buildWorldSystemPrompt(w, save) {
     var user = state.settings.userName || '你';
     var len = String(w.length || '400~500 字').trim();
     var s = '';
@@ -1086,6 +1141,14 @@
 
     // —— 线上聊天记忆（来自「角色」板块）——
     if (false) {
+    }
+
+    /* 剧情历程：钉在 prompt 里，不占滑动窗口 */
+    var storyTL = buildStoryTimeline(save);
+    if (storyTL) {
+      s += '# 剧情历程（按时间顺序，这些是你之前真实写过的，续写必须与之保持一致）\n';
+      s += storyTL + '\n';
+      s += '（续写时不要和上面任何一条矛盾，也不要重复已经发生过的情节。）\n\n';
     }
 
     s += '# 每次回复的固定结构（严格遵守）\n';
@@ -1174,7 +1237,7 @@
       return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content };
     });
     if (!hist.length) hist.push({ role: 'user', content: '（游戏开始）' });
-    return [{ role: 'system', content: buildWorldSystemPrompt(w) }].concat(hist);
+    return [{ role: 'system', content: buildWorldSystemPrompt(w, save) }].concat(hist);
   }
 
   function apiConfig() {
